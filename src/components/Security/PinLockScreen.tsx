@@ -68,12 +68,16 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({ onUnlock }) => {
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-between px-6 py-12 text-slate-100 select-none">
       {/* Top Branding */}
       <div className="flex flex-col items-center text-center space-y-3 pt-6">
-        <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 shadow-2xl shadow-emerald-950/40">
-          <KeyRound className="w-8 h-8 text-emerald-400" />
+        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-900/60 border border-slate-800/80 p-1 flex items-center justify-center shadow-2xl shadow-amber-500/10">
+          <img
+            src="/lk-logo.png"
+            alt="LK manage logo"
+            className="w-full h-full object-contain drop-shadow"
+          />
         </div>
         <div>
-          <h1 className="text-xl font-extrabold text-white tracking-tight">Mes Dettes</h1>
-          <p className="text-xs text-slate-400 mt-1">Application sécurisée · Hors ligne</p>
+          <h1 className="text-xl font-extrabold text-white tracking-tight">LK manage</h1>
+          <p className="text-xs text-slate-400 mt-1">Application sécurisée · 100% Hors ligne</p>
         </div>
       </div>
 

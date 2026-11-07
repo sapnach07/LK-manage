@@ -59,7 +59,7 @@ export function generateIcsContent(item: UnifiedPlanningItem): string {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Mes Dettes//FR',
+    'PRODID:-//LK manage//FR',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',

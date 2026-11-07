@@ -137,7 +137,7 @@ export default function App() {
 
     const dueItems = getItemsNeedingNotification(planningItems, notifSettings.leadDays);
     if (dueItems.length > 0) {
-      const title = `Mes Dettes : ${dueItems.length} échéance${dueItems.length > 1 ? 's' : ''} à venir`;
+      const title = `LK manage : ${dueItems.length} échéance${dueItems.length > 1 ? 's' : ''} à venir`;
       const body = dueItems
         .slice(0, 2)
         .map((i) => i.title)
@@ -302,12 +302,16 @@ export default function App() {
         {/* Top App Header */}
         <header className="flex items-center justify-between pb-3 mb-3 border-b border-slate-900">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-amber-500/20 border border-slate-800 flex items-center justify-center text-emerald-400 font-black text-sm shadow-inner">
-              MD
+            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-0.5 flex items-center justify-center shadow-md shadow-amber-500/5 overflow-hidden">
+              <img
+                src="/lk-logo.png"
+                alt="Logo LK manage"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-                Mes Dettes
+                LK manage
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
                   Hors ligne
                 </span>

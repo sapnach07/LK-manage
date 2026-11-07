@@ -3,7 +3,7 @@ import { PlanningTask } from '../types/planning';
 
 export interface BackupPayload {
   version: number;
-  appName: 'Mes Dettes';
+  appName: 'LK manage' | 'Mes Dettes';
   exportedAt: string;
   debts: Debt[];
   tasks: PlanningTask[];
@@ -85,7 +85,7 @@ export function isBackupReminderDue(asOf: Date = new Date()): boolean {
 export function createBackupPayload(debts: Debt[], tasks: PlanningTask[]): string {
   const payload: BackupPayload = {
     version: 1,
-    appName: 'Mes Dettes',
+    appName: 'LK manage',
     exportedAt: new Date().toISOString(),
     debts,
     tasks,
@@ -137,7 +137,7 @@ export function mergeTasks(currentTasks: PlanningTask[], importedTasks: Planning
 }
 
 /**
- * Validates whether parsed JSON is a legitimate Mes Dettes backup.
+ * Validates whether parsed JSON is a legitimate LK manage (or legacy Mes Dettes) backup.
  */
 export function parseAndValidateBackup(jsonString: string): { debts: Debt[]; tasks: PlanningTask[]; exportedAt: string } {
   const data = JSON.parse(jsonString);
@@ -145,8 +145,8 @@ export function parseAndValidateBackup(jsonString: string): { debts: Debt[]; tas
     throw new Error('Le fichier sélectionné ne contient pas de données JSON valides.');
   }
 
-  if (data.appName !== 'Mes Dettes' && !Array.isArray(data.debts)) {
-    throw new Error("Ce fichier n'est pas une sauvegarde valide de l'application Mes Dettes.");
+  if (data.appName !== 'LK manage' && data.appName !== 'Mes Dettes' && !Array.isArray(data.debts)) {
+    throw new Error("Ce fichier n'est pas une sauvegarde valide de l'application LK manage.");
   }
 
   const debts: Debt[] = Array.isArray(data.debts) ? data.debts : [];
@@ -165,7 +165,7 @@ export function parseAndValidateBackup(jsonString: string): { debts: Debt[]; tas
 export function triggerBackupDownload(debts: Debt[], tasks: PlanningTask[]): void {
   const jsonContent = createBackupPayload(debts, tasks);
   const dateStr = new Date().toISOString().split('T')[0];
-  const filename = `mes-dettes-sauvegarde-${dateStr}.json`;
+  const filename = `lk-manage-sauvegarde-${dateStr}.json`;
 
   const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob);

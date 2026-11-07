@@ -40,7 +40,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({ onSettin
 
         // Optional quick welcome test notification
         try {
-          new Notification('Mes Dettes - Rappels activés', {
+          new Notification('LK manage - Rappels activés', {
             body: 'Vous recevrez vos rappels d’échéances et de tâches.',
             icon: '/icon-192.png',
           });

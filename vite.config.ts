@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'icon.svg', 'apple-touch-icon.png'],
         manifest: {
           id: '/',
-          name: 'Mes Dettes',
-          short_name: 'MesDettes',
-          description: 'Gestion personnelle et 100% hors ligne de dettes et créances en FC et USD.',
+          name: 'LK manage',
+          short_name: 'LK manage',
+          description: 'LK manage - Gestion personnelle et 100% hors ligne de dettes, créances et planning en FC et USD.',
           theme_color: '#090a0f',
           background_color: '#090a0f',
           display: 'standalone',
