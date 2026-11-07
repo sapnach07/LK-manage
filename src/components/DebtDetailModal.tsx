@@ -15,9 +15,11 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Check,
+  CalendarPlus,
 } from 'lucide-react';
 import { Debt, Repayment } from '../types/debt';
 import { getDebtSummary, formatCurrencyValue } from '../utils/debtCalculations';
+import { downloadIcsFile } from '../utils/icsGenerator';
 import { WhatsAppModal } from './WhatsAppModal';
 import { ProofPhotoViewer } from './ProofPhotoViewer';
 
@@ -252,6 +254,34 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                 )}
               </div>
             </div>
+
+            {debt.dueDate && (
+              <button
+                type="button"
+                onClick={() => {
+                  downloadIcsFile({
+                    id: debt.id,
+                    kind: 'debt_due',
+                    title: `${debt.type === 'on_me_doit' ? 'À percevoir de' : 'À rembourser à'} ${debt.personName}`,
+                    date: debt.dueDate,
+                    debtId: debt.id,
+                    debtType: debt.type,
+                    personName: debt.personName,
+                    amountFormatted: formatCurrencyValue(summary.remainingBalance, debt.currency),
+                    note: debt.reason,
+                    isOverdue: summary.isOverdue,
+                    isToday: false,
+                    isTomorrow: false,
+                    isThisWeek: false,
+                    isCompleted: summary.isSettled,
+                  });
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 text-xs font-medium text-slate-300 border border-slate-800 flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <CalendarPlus className="w-4 h-4 text-emerald-400" />
+                <span>Ajouter l'échéance à l'agenda du téléphone (.ics)</span>
+              </button>
+            )}
 
             {/* Reason / Free Note */}
             {debt.reason && (
