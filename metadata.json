@@ -1,0 +1,6 @@
+{
+  "name": "Mes Dettes",
+  "description": "Application mobile 100% hors ligne pour gérer vos dettes et créances personnelles en FC et USD.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
