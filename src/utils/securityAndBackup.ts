@@ -1,5 +1,6 @@
 import { Debt } from '../types/debt';
 import { PlanningTask } from '../types/planning';
+import { Contract } from '../types/contract';
 
 export interface BackupPayload {
   version: number;
@@ -7,6 +8,7 @@ export interface BackupPayload {
   exportedAt: string;
   debts: Debt[];
   tasks: PlanningTask[];
+  contracts?: Contract[];
 }
 
 const PIN_HASH_KEY = 'mes_dettes_pin_hash';
@@ -80,15 +82,16 @@ export function isBackupReminderDue(asOf: Date = new Date()): boolean {
 }
 
 /**
- * Generates JSON string of all debts (including compressed photos) and tasks.
+ * Generates JSON string of all debts (including compressed photos), tasks, and contracts.
  */
-export function createBackupPayload(debts: Debt[], tasks: PlanningTask[]): string {
+export function createBackupPayload(debts: Debt[], tasks: PlanningTask[], contracts: Contract[] = []): string {
   const payload: BackupPayload = {
     version: 1,
     appName: 'LK manage',
     exportedAt: new Date().toISOString(),
     debts,
     tasks,
+    contracts,
   };
   return JSON.stringify(payload, null, 2);
 }
@@ -137,9 +140,35 @@ export function mergeTasks(currentTasks: PlanningTask[], importedTasks: Planning
 }
 
 /**
+ * Merges backup contracts with current contracts.
+ */
+export function mergeContracts(currentContracts: Contract[], importedContracts: Contract[]): Contract[] {
+  const map = new Map<string, Contract>();
+  for (const c of currentContracts) {
+    map.set(c.id, c);
+  }
+  for (const imported of importedContracts) {
+    if (!map.has(imported.id)) {
+      map.set(imported.id, imported);
+    } else {
+      const existing = map.get(imported.id)!;
+      if ((imported.createdAt || 0) >= (existing.createdAt || 0)) {
+        map.set(imported.id, imported);
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/**
  * Validates whether parsed JSON is a legitimate LK manage (or legacy Mes Dettes) backup.
  */
-export function parseAndValidateBackup(jsonString: string): { debts: Debt[]; tasks: PlanningTask[]; exportedAt: string } {
+export function parseAndValidateBackup(jsonString: string): {
+  debts: Debt[];
+  tasks: PlanningTask[];
+  contracts: Contract[];
+  exportedAt: string;
+} {
   const data = JSON.parse(jsonString);
   if (!data || typeof data !== 'object') {
     throw new Error('Le fichier sélectionné ne contient pas de données JSON valides.');
@@ -151,10 +180,12 @@ export function parseAndValidateBackup(jsonString: string): { debts: Debt[]; tas
 
   const debts: Debt[] = Array.isArray(data.debts) ? data.debts : [];
   const tasks: PlanningTask[] = Array.isArray(data.tasks) ? data.tasks : [];
+  const contracts: Contract[] = Array.isArray(data.contracts) ? data.contracts : [];
 
   return {
     debts,
     tasks,
+    contracts,
     exportedAt: data.exportedAt || new Date().toISOString(),
   };
 }
@@ -162,8 +193,8 @@ export function parseAndValidateBackup(jsonString: string): { debts: Debt[]; tas
 /**
  * Downloads the JSON backup file directly on the phone / browser.
  */
-export function triggerBackupDownload(debts: Debt[], tasks: PlanningTask[]): void {
-  const jsonContent = createBackupPayload(debts, tasks);
+export function triggerBackupDownload(debts: Debt[], tasks: PlanningTask[], contracts: Contract[] = []): void {
+  const jsonContent = createBackupPayload(debts, tasks, contracts);
   const dateStr = new Date().toISOString().split('T')[0];
   const filename = `lk-manage-sauvegarde-${dateStr}.json`;
 

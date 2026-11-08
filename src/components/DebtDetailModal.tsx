@@ -16,8 +16,12 @@ import {
   ArrowUpRight,
   Check,
   CalendarPlus,
+  Lock,
+  FileSignature,
+  FileText,
 } from 'lucide-react';
 import { Debt, Repayment } from '../types/debt';
+import { Contract } from '../types/contract';
 import { getDebtSummary, formatCurrencyValue } from '../utils/debtCalculations';
 import { downloadIcsFile } from '../utils/icsGenerator';
 import { WhatsAppModal } from './WhatsAppModal';
@@ -25,20 +29,28 @@ import { ProofPhotoViewer } from './ProofPhotoViewer';
 
 interface DebtDetailModalProps {
   debt: Debt;
+  contract?: Contract | null;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onAddRepayment: (debtId: string, payment: { amount: number; date: string; note?: string }) => Promise<void>;
   onDeleteRepayment: (debtId: string, repaymentId: string) => Promise<void>;
+  onViewContract?: (contract: Contract) => void;
+  onGenerateContractForDebt?: (debt: Debt) => void;
+  onOpenAmendmentForDebt?: (contract: Contract, debt: Debt) => void;
 }
 
 export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
   debt,
+  contract,
   onClose,
   onEdit,
   onDelete,
   onAddRepayment,
   onDeleteRepayment,
+  onViewContract,
+  onGenerateContractForDebt,
+  onOpenAmendmentForDebt,
 }) => {
   const summary = getDebtSummary(debt);
 
@@ -228,6 +240,74 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Contrat sous seing privé lié */}
+            {contract ? (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/20 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileSignature className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <span className="font-bold text-white block">
+                        Contrat {contract.contractNumber}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Signé le {contract.signedAt} • Scellé
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-semibold flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    Verrouillé
+                  </span>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onViewContract?.(contract);
+                    }}
+                    className="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold text-xs border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Consulter / Partager PDF</span>
+                  </button>
+
+                  {contract.status !== 'cancelled' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenAmendmentForDebt?.(contract, debt);
+                      }}
+                      className="py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-amber-500/10"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Avenant</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : debt.type === 'on_me_doit' && onGenerateContractForDebt ? (
+              <div className="p-3 rounded-2xl bg-slate-950 border border-dashed border-slate-800 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <FileSignature className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Aucun contrat officiel lié</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onGenerateContractForDebt(debt);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold text-[11px] transition cursor-pointer"
+                >
+                  Générer le contrat
+                </button>
+              </div>
+            ) : null}
 
             {/* Dates & Reason Information */}
             <div className="grid grid-cols-2 gap-2 text-xs">

@@ -1,0 +1,109 @@
+import { Currency } from './debt';
+
+export type DeliveryMethod = 'especes' | 'mobile_money' | 'virement_bancaire';
+
+export interface BorrowerIdentity {
+  enabled: boolean;
+  type: 'carte_electeur' | 'passeport' | 'permis_conduire' | 'autre';
+  number: string;
+}
+
+export interface LatePenalty {
+  enabled: boolean;
+  rate: number; // e.g. 2 for 2%
+  period: 'jour' | 'semaine' | 'mois';
+}
+
+export interface Witness {
+  enabled: boolean;
+  fullName: string;
+  signature?: string; // Data URL PNG
+}
+
+export interface LenderProfile {
+  fullName: string;
+  address: string;
+  phone: string;
+  city: string; // Default: 'Kinshasa'
+  signature: string; // Data URL PNG, saved once
+  defaultNoticeDays: number; // Default: 7
+  defaultJurisdiction: string; // Default: 'Kinshasa'
+}
+
+export interface Amendment {
+  id: string;
+  contractId: string;
+  amendmentNumber: number; // 1, 2, 3...
+  addedAmount: number;
+  reason: string;
+  date: string; // YYYY-MM-DD
+  signedAt: string; // ISO date-time
+  newPrincipalTotal: number;
+  contentDigest: string; // SHA-256
+  amendmentText: string;
+  borrowerSignature: string;
+  lenderSignature: string;
+  witnessSignature?: string;
+}
+
+export interface Contract {
+  id: string; // e.g. "ctr_1731..."
+  debtId: string;
+  contractNumber: string; // e.g. "CTR-2026-0001"
+  createdAt: number;
+  signedAt: string; // Human date & time or ISO string
+  isLocked: boolean; // Locked immediately after signature
+  status: 'active' | 'cancelled';
+  cancellationReason?: string;
+  cancelledAt?: string;
+
+  // Lender details at signing time
+  lender: {
+    fullName: string;
+    address: string;
+    phone: string;
+    city: string;
+    jurisdictionCity: string;
+  };
+
+  // Borrower details
+  borrower: {
+    fullName: string;
+    address: string;
+    phone: string;
+    identity?: BorrowerIdentity;
+  };
+
+  // Loan terms
+  principalAmount: number;
+  currency: Currency; // 'FC' | 'USD'
+  startDate: string; // YYYY-MM-DD
+  deliveryMethods: DeliveryMethod[];
+  
+  // Interest
+  interestType: 'none' | 'percentage_once' | 'percentage_monthly';
+  interestRate?: number;
+
+  // Repayment terms
+  hasDueDate: boolean;
+  dueDate?: string; // YYYY-MM-DD if hasDueDate
+  noticeDays?: number; // Days notice if no dueDate (default: 7)
+
+  // Late penalty (only if hasDueDate)
+  latePenalty?: LatePenalty;
+
+  // Witness
+  witness?: Witness;
+
+  // Digest & exact text
+  contentDigest: string; // SHA-256 fingerprint of the contract content
+  contractText: string;
+
+  // Signatures (Data URLs)
+  lenderSignature: string;
+  borrowerSignature: string;
+  witnessSignature?: string;
+
+  // Amendments
+  amendments: Amendment[];
+}

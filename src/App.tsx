@@ -17,9 +17,12 @@ import {
   Calendar,
   Wallet,
   Settings as SettingsIcon,
+  FileText,
+  FileSignature,
 } from 'lucide-react';
 import { Debt, Currency } from './types/debt';
 import { PlanningTask } from './types/planning';
+import { Contract } from './types/contract';
 import {
   getAllDebts,
   saveDebt,
@@ -30,9 +33,12 @@ import {
   saveTask,
   deleteTask,
   toggleTaskCompleted,
+  getAllContracts,
   getNotificationSettings,
   saveNotificationSettings,
 } from './services/db';
+import { getLenderProfile, isLenderProfileConfigured } from './services/lenderProfile';
+import { buildContractFullText, generateContractNumber } from './utils/contractGenerator';
 import { calculateDashboardTotals, getDebtSummary } from './utils/debtCalculations';
 import {
   buildUnifiedPlanningItems,
@@ -52,8 +58,13 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { PlanningTab } from './components/Planning/PlanningTab';
 import { PinLockScreen } from './components/Security/PinLockScreen';
 import { SettingsModal } from './components/Settings/SettingsModal';
+import { ContractsList } from './components/Contracts/ContractsList';
+import { ContractSigningModal } from './components/Contracts/ContractSigningModal';
+import { ContractDetailModal } from './components/Contracts/ContractDetailModal';
+import { AmendmentModal } from './components/Contracts/AmendmentModal';
+import { LenderProfileModal } from './components/Contracts/LenderProfileModal';
 
-type MainTab = 'dettes' | 'planning';
+type MainTab = 'dettes' | 'planning' | 'contrats';
 type FilterType = 'all' | 'je_dois' | 'on_me_doit' | 'overdue' | 'settled';
 type SortType = 'due_date' | 'recent' | 'amount_desc';
 
@@ -63,20 +74,30 @@ export default function App() {
   // Security Lock
   const [isLocked, setIsLocked] = useState(() => isPinProtectionEnabled());
 
-  // Debts state
+  // Debts & Planning state
   const [debts, setDebts] = useState<Debt[]>([]);
   const [tasks, setTasks] = useState<PlanningTask[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filters & Search
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [currencyFilter, setCurrencyFilter] = useState<'ALL' | Currency>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortType>('due_date');
 
-  // Modals
+  // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [formDefaultToContract, setFormDefaultToContract] = useState(false);
   const [selectedDebtId, setSelectedDebtId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Contract specific modals
+  const [isLenderProfileOpen, setIsLenderProfileOpen] = useState(false);
+  const [contractSigningDraft, setContractSigningDraft] = useState<any | null>(null);
+  const [selectedContractForDetail, setSelectedContractForDetail] = useState<Contract | null>(null);
+  const [contractToAmend, setContractToAmend] = useState<Contract | null>(null);
 
   // Backup reminder indicator
   const backupReminderActive = useMemo(() => isBackupReminderDue(), [debts, isSettingsOpen]);
@@ -100,30 +121,25 @@ export default function App() {
     }
   };
 
+  const refreshContracts = async () => {
+    try {
+      const contractList = await getAllContracts();
+      setContracts(contractList);
+    } catch (err) {
+      console.error('Erreur chargement contrats IndexedDB:', err);
+    }
+  };
+
   useEffect(() => {
     const initData = async () => {
       setIsLoading(true);
-      await Promise.all([refreshDebts(), refreshTasks()]);
+      await Promise.all([refreshDebts(), refreshTasks(), refreshContracts()]);
       setIsLoading(false);
     };
     initData();
   }, []);
 
-  // Compute dashboard totals (FC and USD strictly separated)
-  const totals = useMemo(() => {
-    return calculateDashboardTotals(debts);
-  }, [debts]);
-
-  // Compute planning items for badge count
-  const planningItems = useMemo(() => {
-    return buildUnifiedPlanningItems(debts, tasks);
-  }, [debts, tasks]);
-
-  const planningAlertCount = useMemo(() => {
-    return planningItems.filter((i) => !i.isCompleted && (i.isOverdue || i.isToday)).length;
-  }, [planningItems]);
-
-  // Check and dispatch local browser notifications
+  // Notifications check on startup & when planning items update
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
@@ -132,9 +148,9 @@ export default function App() {
     if (!notifSettings.enabled) return;
 
     const todayStr = getTodayDateString();
-    // Only notify once per calendar day
     if (notifSettings.lastNotifiedDate === todayStr) return;
 
+    const planningItems = buildUnifiedPlanningItems(debts, tasks);
     const dueItems = getItemsNeedingNotification(planningItems, notifSettings.leadDays);
     if (dueItems.length > 0) {
       const title = `LK manage : ${dueItems.length} échéance${dueItems.length > 1 ? 's' : ''} à venir`;
@@ -153,94 +169,49 @@ export default function App() {
           lastNotifiedDate: todayStr,
         });
       } catch (e) {
-        console.error('Notification error:', e);
+        // notification suppressed
       }
     }
-  }, [planningItems]);
+  }, [debts, tasks]);
 
-  // Currently opened debt in detail modal
-  const selectedDebt = useMemo(() => {
-    if (!selectedDebtId) return null;
-    return debts.find((d) => d.id === selectedDebtId) || null;
-  }, [debts, selectedDebtId]);
-
-  // Filtered and sorted debts
-  const filteredDebts = useMemo(() => {
-    return debts
-      .filter((debt) => {
-        const summary = getDebtSummary(debt);
-
-        // Filter by category
-        if (selectedFilter === 'je_dois' && debt.type !== 'je_dois') return false;
-        if (selectedFilter === 'on_me_doit' && debt.type !== 'on_me_doit') return false;
-        if (selectedFilter === 'overdue' && !summary.isOverdue) return false;
-        if (selectedFilter === 'settled' && !summary.isSettled) return false;
-
-        // Currency filter
-        if (currencyFilter !== 'ALL' && debt.currency !== currencyFilter) return false;
-
-        // Search query
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase().trim();
-          const matchesName = debt.personName.toLowerCase().includes(q);
-          const matchesReason = debt.reason ? debt.reason.toLowerCase().includes(q) : false;
-          const matchesPhone = debt.phoneNumber ? debt.phoneNumber.includes(q) : false;
-          if (!matchesName && !matchesReason && !matchesPhone) return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'recent') {
-          return b.createdAt - a.createdAt;
-        }
-        if (sortBy === 'amount_desc') {
-          return b.initialAmount - a.initialAmount;
-        }
-        // default: due_date
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return a.dueDate.localeCompare(b.dueDate);
-      });
-  }, [debts, selectedFilter, currencyFilter, searchQuery, sortBy]);
-
-  // Handlers for Debt CRUD
-  const handleSaveDebt = async (debtData: any) => {
-    const isEdit = !!debtData.id;
+  // Handle Debt CRUD
+  const handleSaveDebt = async (
+    debtData: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'> & { id?: string }
+  ): Promise<Debt> => {
+    const now = Date.now();
     let saved: Debt;
 
-    if (isEdit) {
+    if (debtData.id) {
       const existing = debts.find((d) => d.id === debtData.id);
-      saved = {
+      const updated: Debt = {
+        ...existing!,
         ...debtData,
-        repayments: existing?.repayments || [],
-        createdAt: existing?.createdAt || Date.now(),
-        updatedAt: Date.now(),
+        id: debtData.id,
+        updatedAt: now,
       };
+      saved = await saveDebt(updated);
     } else {
-      saved = {
+      const newDebt: Debt = {
         ...debtData,
-        id: 'debt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        id: 'debt_' + now + '_' + Math.random().toString(36).substring(2, 7),
         repayments: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: now,
+        updatedAt: now,
       };
+      saved = await saveDebt(newDebt);
     }
 
-    await saveDebt(saved);
     await refreshDebts();
+    return saved;
   };
 
-  const handleDeleteDebt = async (debtId: string) => {
-    await deleteDebt(debtId);
+  const handleDeleteDebt = async (id: string) => {
+    await deleteDebt(id);
     setSelectedDebtId(null);
     await refreshDebts();
   };
 
-  const handleAddRepayment = async (
-    debtId: string,
-    payment: { amount: number; date: string; note?: string }
-  ) => {
+  const handleAddRepayment = async (debtId: string, payment: { amount: number; date: string; note?: string }) => {
     await addRepaymentToDebt(debtId, payment);
     await refreshDebts();
   };
@@ -250,42 +221,175 @@ export default function App() {
     await refreshDebts();
   };
 
-  // Handlers for Planning Task CRUD
-  const handleSaveTask = async (taskData: any) => {
-    const isEdit = !!taskData.id;
-    let savedTask: PlanningTask;
-
-    if (isEdit) {
+  // Handle Tasks CRUD for Planning
+  const handleSaveTask = async (
+    taskData: Omit<PlanningTask, 'id' | 'createdAt' | 'updatedAt' | 'completed'> & { id?: string }
+  ) => {
+    const now = Date.now();
+    let saved: PlanningTask;
+    if (taskData.id) {
       const existing = tasks.find((t) => t.id === taskData.id);
-      savedTask = {
+      saved = {
+        ...existing!,
         ...taskData,
-        completed: existing?.completed || false,
-        createdAt: existing?.createdAt || Date.now(),
-        updatedAt: Date.now(),
+        id: taskData.id,
+        completed: existing?.completed ?? false,
+        updatedAt: now,
       };
     } else {
-      savedTask = {
+      saved = {
         ...taskData,
-        id: 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        id: 'task_' + now + '_' + Math.random().toString(36).substring(2, 7),
         completed: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: now,
+        updatedAt: now,
       };
     }
-
-    await saveTask(savedTask);
+    await saveTask(saved);
     await refreshTasks();
   };
 
-  const handleToggleTask = async (taskId: string) => {
-    await toggleTaskCompleted(taskId);
+  const handleToggleTask = async (id: string) => {
+    await toggleTaskCompleted(id);
     await refreshTasks();
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    await deleteTask(taskId);
+  const handleDeleteTask = async (id: string) => {
+    await deleteTask(id);
     await refreshTasks();
   };
+
+  // Contract Generation Flow from Debt Form
+  const handleGenerateContractRequest = async (params: {
+    debtData: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'>;
+    contractParams: {
+      borrowerAddress: string;
+      deliveryMethods: any[];
+      hasDueDate: boolean;
+      dueDate?: string;
+      noticeDays?: number;
+      latePenalty?: any;
+      witness?: any;
+      borrowerIdentity?: any;
+    };
+  }) => {
+    const lender = getLenderProfile();
+    if (!isLenderProfileConfigured(lender)) {
+      // Must configure lender profile & signature first
+      setIsLenderProfileOpen(true);
+      throw new Error('Veuillez d’abord renseigner vos coordonnées et votre signature de prêteur.');
+    }
+
+    // 1. Save or update the debt first
+    const savedDebt = await handleSaveDebt(params.debtData);
+
+    // 2. Prepare contract draft
+    const contractNumber = generateContractNumber(contracts.length);
+    const now = new Date();
+    const signedAtFormatted = now.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const draftBase = {
+      id: 'ctr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      debtId: savedDebt.id,
+      contractNumber,
+      createdAt: Date.now(),
+      signedAt: signedAtFormatted,
+      status: 'active' as const,
+      isLocked: false,
+      lender: {
+        fullName: lender.fullName,
+        address: lender.address,
+        phone: lender.phone,
+        city: lender.city || 'Kinshasa',
+        jurisdictionCity: lender.defaultJurisdiction || 'Kinshasa',
+      },
+      borrower: {
+        fullName: params.debtData.personName,
+        address: params.contractParams.borrowerAddress,
+        phone: params.debtData.phoneNumber,
+        identity: params.contractParams.borrowerIdentity,
+      },
+      principalAmount: params.debtData.initialAmount,
+      currency: params.debtData.currency,
+      startDate: params.debtData.startDate,
+      deliveryMethods: params.contractParams.deliveryMethods,
+      interestType: params.debtData.interestType as any,
+      interestRate: params.debtData.interestRate,
+      hasDueDate: params.contractParams.hasDueDate,
+      dueDate: params.contractParams.hasDueDate ? params.contractParams.dueDate : undefined,
+      noticeDays: !params.contractParams.hasDueDate ? (params.contractParams.noticeDays || 7) : undefined,
+      latePenalty: params.contractParams.latePenalty,
+      witness: params.contractParams.witness,
+      lenderSignature: lender.signature,
+      borrowerSignature: '',
+      amendments: [],
+    };
+
+    const contractText = buildContractFullText(draftBase);
+
+    setContractSigningDraft({
+      ...draftBase,
+      contractText,
+    });
+  };
+
+  // Calculations for Financial Dashboard
+  const totals = useMemo(() => calculateDashboardTotals(debts), [debts]);
+
+  // Planning alerts count (today or overdue)
+  const planningAlertCount = useMemo(() => {
+    const items = buildUnifiedPlanningItems(debts, tasks);
+    const today = getTodayDateString();
+    return items.filter((i) => !i.isCompleted && i.date <= today).length;
+  }, [debts, tasks]);
+
+  // Filtered & Sorted Debts
+  const filteredDebts = useMemo(() => {
+    return debts
+      .filter((debt) => {
+        const summary = getDebtSummary(debt);
+
+        if (selectedFilter === 'je_dois' && debt.type !== 'je_dois') return false;
+        if (selectedFilter === 'on_me_doit' && debt.type !== 'on_me_doit') return false;
+        if (selectedFilter === 'overdue' && !summary.isOverdue) return false;
+        if (selectedFilter === 'settled' && !summary.isSettled) return false;
+
+        if (currencyFilter !== 'ALL' && debt.currency !== currencyFilter) return false;
+
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase().trim();
+          const matchName = debt.personName.toLowerCase().includes(query);
+          const matchReason = debt.reason.toLowerCase().includes(query);
+          const matchPhone = debt.phoneNumber.includes(query);
+          return matchName || matchReason || matchPhone;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'due_date') {
+          return a.dueDate.localeCompare(b.dueDate);
+        }
+        if (sortBy === 'recent') {
+          return b.createdAt - a.createdAt;
+        }
+        if (sortBy === 'amount_desc') {
+          return b.initialAmount - a.initialAmount;
+        }
+        return 0;
+      });
+  }, [debts, selectedFilter, currencyFilter, searchQuery, sortBy]);
+
+  const selectedDebt = useMemo(() => {
+    if (!selectedDebtId) return null;
+    return debts.find((d) => d.id === selectedDebtId) || null;
+  }, [debts, selectedDebtId]);
 
   // If PIN protection is enabled, display the lock screen on startup
   if (isLocked) {
@@ -343,18 +447,18 @@ export default function App() {
           </div>
         </header>
 
-        {/* Primary Tabs Navigation: « Dettes » & « Planning » */}
-        <nav className="grid grid-cols-2 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 mb-4" aria-label="Navigation principale">
+        {/* Primary Tabs Navigation: « Dettes », « Planning », « Contrats » */}
+        <nav className="grid grid-cols-3 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 mb-4" aria-label="Navigation principale">
           <button
             type="button"
             onClick={() => setActiveMainTab('dettes')}
-            className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               activeMainTab === 'dettes'
                 ? 'bg-slate-800 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Wallet className="w-4 h-4 text-emerald-400" />
+            <Wallet className="w-3.5 h-3.5 text-emerald-400" />
             <span>Dettes</span>
             {totals.totalCount > 0 && (
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300">
@@ -366,13 +470,13 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveMainTab('planning')}
-            className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition relative cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition relative cursor-pointer ${
               activeMainTab === 'planning'
                 ? 'bg-slate-800 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Calendar className="w-4 h-4 text-indigo-400" />
+            <Calendar className="w-3.5 h-3.5 text-indigo-400" />
             <span>Planning</span>
             {planningAlertCount > 0 && (
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-bold">
@@ -380,9 +484,27 @@ export default function App() {
               </span>
             )}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('contrats')}
+            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition relative cursor-pointer ${
+              activeMainTab === 'contrats'
+                ? 'bg-slate-800 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-amber-400" />
+            <span>Contrats</span>
+            {contracts.length > 0 && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                {contracts.length}
+              </span>
+            )}
+          </button>
         </nav>
 
-        {/* TAB 1: DETTES (Intact & unchanged) */}
+        {/* TAB 1: DETTES */}
         {activeMainTab === 'dettes' && (
           <div className="space-y-4">
             {/* Dashboard Financial Overview (FC and USD separate) */}
@@ -390,145 +512,110 @@ export default function App() {
               <Dashboard
                 totals={totals}
                 activeFilter={selectedFilter}
-                onSelectFilter={(f) => setSelectedFilter(f)}
+                onSelectFilter={(filter) => setSelectedFilter(filter)}
               />
             </section>
 
-            {/* Search & Currency Filter Controls */}
-            <section className="space-y-2.5">
-              {/* Search bar */}
+            {/* Search and Filters Bar */}
+            <section className="space-y-2">
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
+                  placeholder="Rechercher par nom, motif, tél..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher par nom, motif, tél..."
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs focus:outline-none focus:border-amber-500"
                 />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 hover:text-white"
-                  >
-                    Effacer
-                  </button>
-                )}
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
-              {/* Filter Chips Scrollable on small screens */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              {/* Status Filters */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('all')}
                   className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'all'
-                      ? 'bg-slate-200 text-slate-950 font-semibold shadow-sm'
-                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-slate-800 text-white font-bold'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
                   Toutes ({totals.totalCount})
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('on_me_doit')}
                   className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'on_me_doit'
-                      ? 'bg-emerald-500 text-slate-950 font-semibold shadow-sm'
-                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/50 font-bold'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
                   On me doit
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('je_dois')}
                   className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'je_dois'
-                      ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
-                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-amber-950 text-amber-400 border border-amber-500/50 font-bold'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
                   Je dois
                 </button>
-
                 {totals.overdueCount > 0 && (
                   <button
                     type="button"
                     onClick={() => setSelectedFilter('overdue')}
-                    className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition flex items-center gap-1 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
                       selectedFilter === 'overdue'
-                        ? 'bg-rose-500 text-white font-semibold shadow-sm'
-                        : 'bg-rose-950/40 border border-rose-900/60 text-rose-400 hover:text-rose-300'
+                        ? 'bg-rose-950 text-rose-400 border border-rose-500/50 font-bold'
+                        : 'bg-slate-900 text-rose-400 hover:text-rose-300 border border-slate-800'
                     }`}
                   >
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>En retard ({totals.overdueCount})</span>
+                    En retard ({totals.overdueCount})
                   </button>
                 )}
-
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('settled')}
-                  className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition flex items-center gap-1 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'settled'
-                      ? 'bg-emerald-600 text-white font-semibold shadow-sm'
-                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 font-bold'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Soldées ({totals.settledCount})</span>
+                  Soldées ({totals.settledCount})
                 </button>
               </div>
 
-              {/* Secondary bar: Currency toggle & Sort */}
+              {/* Currency & Sort Bar */}
               <div className="flex items-center justify-between text-xs pt-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-[11px] text-slate-500 mr-1">Devise :</span>
-                  <button
-                    type="button"
-                    onClick={() => setCurrencyFilter('ALL')}
-                    className={`px-2 py-0.5 rounded-md text-[11px] transition cursor-pointer ${
-                      currencyFilter === 'ALL'
-                        ? 'bg-slate-800 text-white font-semibold'
-                        : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    Toutes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrencyFilter('USD')}
-                    className={`px-2 py-0.5 rounded-md text-[11px] transition cursor-pointer ${
-                      currencyFilter === 'USD'
-                        ? 'bg-slate-800 text-white font-semibold'
-                        : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    USD ($)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrencyFilter('FC')}
-                    className={`px-2 py-0.5 rounded-md text-[11px] transition cursor-pointer ${
-                      currencyFilter === 'FC'
-                        ? 'bg-slate-800 text-white font-semibold'
-                        : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    FC
-                  </button>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-500">Devise :</span>
+                  {(['ALL', 'USD', 'FC'] as const).map((curr) => (
+                    <button
+                      key={curr}
+                      type="button"
+                      onClick={() => setCurrencyFilter(curr)}
+                      className={`px-2 py-0.5 rounded-md font-semibold text-[11px] transition cursor-pointer ${
+                        currencyFilter === curr
+                          ? 'bg-slate-700 text-white'
+                          : 'text-slate-500 hover:text-slate-300'
+                      }`}
+                    >
+                      {curr === 'ALL' ? 'Toutes' : curr === 'USD' ? 'USD ($)' : 'FC'}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                <div className="flex items-center gap-1">
                   <ArrowUpDown className="w-3 h-3 text-slate-500" />
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortType)}
-                    className="bg-transparent text-slate-400 focus:outline-none cursor-pointer"
+                    className="bg-transparent text-slate-400 hover:text-slate-200 text-[11px] focus:outline-none cursor-pointer"
                   >
                     <option value="due_date" className="bg-slate-900 text-white">Échéance</option>
                     <option value="recent" className="bg-slate-900 text-white">Plus récentes</option>
@@ -538,10 +625,10 @@ export default function App() {
               </div>
             </section>
 
-            {/* Debts List or Pure Empty State */}
-            <section className="space-y-2.5 flex-1">
+            {/* Debts List */}
+            <section className="space-y-2.5">
               {isLoading ? (
-                <div className="p-8 text-center text-xs text-slate-500">
+                <div className="py-12 text-center text-xs text-slate-500">
                   Chargement des données locales...
                 </div>
               ) : filteredDebts.length > 0 ? (
@@ -549,11 +636,11 @@ export default function App() {
                   <DebtCard
                     key={debt.id}
                     debt={debt}
+                    hasContract={contracts.some((c) => c.debtId === debt.id)}
                     onClick={() => setSelectedDebtId(debt.id)}
                   />
                 ))
               ) : debts.length === 0 ? (
-                // Absolute empty state: application starts with no fake data
                 <div className="py-12 px-6 text-center rounded-3xl bg-slate-900/40 border border-dashed border-slate-800 my-auto">
                   <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 mx-auto flex items-center justify-center text-slate-600 mb-4 shadow-inner">
                     <Coins className="w-7 h-7 text-emerald-400/80" />
@@ -566,6 +653,7 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setEditingDebt(null);
+                      setFormDefaultToContract(false);
                       setIsFormOpen(true);
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-950 transition cursor-pointer"
@@ -575,7 +663,6 @@ export default function App() {
                   </button>
                 </div>
               ) : (
-                // No items matching current filter
                 <div className="py-8 text-center text-xs text-slate-500">
                   Aucune dette ne correspond aux critères sélectionnés.
                 </div>
@@ -597,15 +684,34 @@ export default function App() {
             />
           </section>
         )}
+
+        {/* TAB 3: CONTRATS */}
+        {activeMainTab === 'contrats' && (
+          <section className="flex-1">
+            <ContractsList
+              contracts={contracts}
+              debts={debts}
+              onOpenContractDetail={(c) => setSelectedContractForDetail(c)}
+              onOpenAmendment={(c) => setContractToAmend(c)}
+              onOpenLenderProfile={() => setIsLenderProfileOpen(true)}
+              onOpenNewDebtWithContract={() => {
+                setEditingDebt(null);
+                setFormDefaultToContract(true);
+                setIsFormOpen(true);
+              }}
+            />
+          </section>
+        )}
       </div>
 
-      {/* Floating Action Button (FAB) for adding Debt (only on dettes tab) */}
+      {/* Floating Action Button (FAB) on Dettes Tab */}
       {activeMainTab === 'dettes' && (
         <div className="fixed bottom-5 left-0 right-0 max-w-md mx-auto px-4 z-30 pointer-events-none">
           <button
             type="button"
             onClick={() => {
               setEditingDebt(null);
+              setFormDefaultToContract(false);
               setIsFormOpen(true);
             }}
             className="pointer-events-auto w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-2xl shadow-emerald-950 border border-emerald-400/30 transition cursor-pointer"
@@ -621,10 +727,13 @@ export default function App() {
       {isFormOpen && (
         <DebtFormModal
           initialDebt={editingDebt}
+          defaultToContractMode={formDefaultToContract}
           onSave={handleSaveDebt}
+          onGenerateContractRequest={handleGenerateContractRequest}
           onClose={() => {
             setIsFormOpen(false);
             setEditingDebt(null);
+            setFormDefaultToContract(false);
           }}
         />
       )}
@@ -633,6 +742,7 @@ export default function App() {
       {selectedDebt && (
         <DebtDetailModal
           debt={selectedDebt}
+          contract={contracts.find((c) => c.debtId === selectedDebt.id) || null}
           onClose={() => setSelectedDebtId(null)}
           onEdit={() => {
             setEditingDebt(selectedDebt);
@@ -642,16 +752,81 @@ export default function App() {
           onDelete={() => handleDeleteDebt(selectedDebt.id)}
           onAddRepayment={handleAddRepayment}
           onDeleteRepayment={handleDeleteRepayment}
+          onViewContract={(c) => setSelectedContractForDetail(c)}
+          onOpenAmendmentForDebt={(c) => setContractToAmend(c)}
+          onGenerateContractForDebt={(d) => {
+            setEditingDebt(d);
+            setFormDefaultToContract(true);
+            setIsFormOpen(true);
+          }}
         />
       )}
 
-      {/* Settings Modal (PIN & Backup/Restore) */}
+      {/* Contract In-App Review & Signing Modal */}
+      {contractSigningDraft && (
+        <ContractSigningModal
+          contractDraft={contractSigningDraft}
+          onContractFinalized={async (signed) => {
+            await refreshContracts();
+            setSelectedContractForDetail(signed);
+            setContractSigningDraft(null);
+          }}
+          onClose={() => setContractSigningDraft(null)}
+        />
+      )}
+
+      {/* Contract Detail & Management Modal */}
+      {selectedContractForDetail && (
+        <ContractDetailModal
+          contract={selectedContractForDetail}
+          debt={debts.find((d) => d.id === selectedContractForDetail.debtId) || null}
+          onClose={() => setSelectedContractForDetail(null)}
+          onOpenAmendment={(c) => {
+            setSelectedContractForDetail(null);
+            setContractToAmend(c);
+          }}
+          onContractUpdated={async (updated) => {
+            await refreshContracts();
+            setSelectedContractForDetail(updated);
+          }}
+        />
+      )}
+
+      {/* Contract Amendment Modal */}
+      {contractToAmend && (
+        <AmendmentModal
+          contract={contractToAmend}
+          debt={debts.find((d) => d.id === contractToAmend.debtId) || null}
+          onClose={() => setContractToAmend(null)}
+          onAmendmentCreated={async (updatedContract) => {
+            await Promise.all([refreshContracts(), refreshDebts()]);
+            setSelectedContractForDetail(updatedContract);
+            setContractToAmend(null);
+          }}
+        />
+      )}
+
+      {/* Lender Profile & Signature Modal */}
+      <LenderProfileModal
+        isOpen={isLenderProfileOpen}
+        onClose={() => setIsLenderProfileOpen(false)}
+        onSaved={async () => {
+          // Re-render
+        }}
+      />
+
+      {/* Settings Modal (PIN, Backup/Restore & Lender Profile) */}
       {isSettingsOpen && (
         <SettingsModal
           debts={debts}
           tasks={tasks}
+          contracts={contracts}
+          onOpenLenderProfile={() => {
+            setIsSettingsOpen(false);
+            setIsLenderProfileOpen(true);
+          }}
           onDataRestored={async () => {
-            await Promise.all([refreshDebts(), refreshTasks()]);
+            await Promise.all([refreshDebts(), refreshTasks(), refreshContracts()]);
           }}
           onClose={() => setIsSettingsOpen(false)}
         />

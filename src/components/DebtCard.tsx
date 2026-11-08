@@ -7,6 +7,7 @@ import {
   Calendar,
   MessageSquare,
   Image as ImageIcon,
+  FileSignature,
 } from 'lucide-react';
 import { Debt } from '../types/debt';
 import { getDebtSummary, formatCurrencyValue } from '../utils/debtCalculations';
@@ -14,10 +15,11 @@ import { WhatsAppModal } from './WhatsAppModal';
 
 interface DebtCardProps {
   debt: Debt;
+  hasContract?: boolean;
   onClick: () => void;
 }
 
-export const DebtCard: React.FC<DebtCardProps> = ({ debt, onClick }) => {
+export const DebtCard: React.FC<DebtCardProps> = ({ debt, hasContract, onClick }) => {
   const summary = getDebtSummary(debt);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
 
@@ -64,6 +66,16 @@ export const DebtCard: React.FC<DebtCardProps> = ({ debt, onClick }) => {
                 title="Photo de preuve enregistrée"
               >
                 <ImageIcon className="w-3 h-3" />
+              </span>
+            )}
+
+            {hasContract && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-semibold"
+                title="Contrat sous seing privé scellé"
+              >
+                <FileSignature className="w-2.5 h-2.5" />
+                <span>Contrat</span>
               </span>
             )}
           </div>

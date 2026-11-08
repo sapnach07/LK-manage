@@ -13,9 +13,11 @@ import {
   Clock,
   RefreshCw,
   FileText,
+  UserCheck,
 } from 'lucide-react';
 import { Debt } from '../../types/debt';
 import { PlanningTask } from '../../types/planning';
+import { Contract } from '../../types/contract';
 import {
   isPinProtectionEnabled,
   setPinCode,
@@ -27,12 +29,16 @@ import {
   parseAndValidateBackup,
   mergeDebts,
   mergeTasks,
+  mergeContracts,
 } from '../../utils/securityAndBackup';
 import { replaceEntireDatabase, mergeDatabase } from '../../services/db';
+import { isLenderProfileConfigured } from '../../services/lenderProfile';
 
 interface SettingsModalProps {
   debts: Debt[];
   tasks: PlanningTask[];
+  contracts?: Contract[];
+  onOpenLenderProfile?: () => void;
   onDataRestored: () => Promise<void>;
   onClose: () => void;
 }
@@ -40,6 +46,8 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   debts,
   tasks,
+  contracts = [],
+  onOpenLenderProfile,
   onDataRestored,
   onClose,
 }) => {
@@ -53,7 +61,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // Backup & Restore states
   const [lastBackup, setLastBackup] = useState<string | null>(getLastBackupDate());
   const [backupDue, setBackupDue] = useState(isBackupReminderDue());
-  const [restorePayload, setRestorePayload] = useState<{ debts: Debt[]; tasks: PlanningTask[]; exportedAt: string } | null>(null);
+  const [restorePayload, setRestorePayload] = useState<{
+    debts: Debt[];
+    tasks: PlanningTask[];
+    contracts: Contract[];
+    exportedAt: string;
+  } | null>(null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -127,13 +140,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleExportBackup = () => {
     try {
-      triggerBackupDownload(debts, tasks);
+      triggerBackupDownload(debts, tasks, contracts);
       setLastBackup(new Date().toISOString());
       setBackupDue(false);
       setSuccessMessage('Sauvegarde JSON téléchargée avec succès.');
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (e: any) {
-      setRestoreError(e?.message || 'Erreur lors de la sauvegarde.');
+    } catch (e: unknown) {
+      setRestoreError((e as Error)?.message || 'Erreur lors de la sauvegarde.');
     }
   };
 
@@ -148,8 +161,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         const text = event.target?.result as string;
         const parsed = parseAndValidateBackup(text);
         setRestorePayload(parsed);
-      } catch (err: any) {
-        setRestoreError(err?.message || 'Fichier JSON invalide.');
+      } catch (err: unknown) {
+        setRestoreError((err as Error)?.message || 'Fichier JSON invalide.');
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
@@ -165,11 +178,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     try {
       if (mode === 'replace') {
-        await replaceEntireDatabase(restorePayload.debts, restorePayload.tasks);
+        await replaceEntireDatabase(
+          restorePayload.debts,
+          restorePayload.tasks,
+          restorePayload.contracts || []
+        );
       } else {
         const mergedDebtsList = mergeDebts(debts, restorePayload.debts);
         const mergedTasksList = mergeTasks(tasks, restorePayload.tasks);
-        await mergeDatabase(mergedDebtsList, mergedTasksList);
+        const mergedContractsList = mergeContracts(contracts, restorePayload.contracts || []);
+        await mergeDatabase(mergedDebtsList, mergedTasksList, mergedContractsList);
       }
 
       await onDataRestored();
@@ -180,8 +198,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           : 'Données fusionnées avec succès.'
       );
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err: any) {
-      setRestoreError(err?.message || 'Erreur lors de la restauration.');
+    } catch (err: unknown) {
+      setRestoreError((err as Error)?.message || 'Erreur lors de la restauration.');
     } finally {
       setIsProcessing(false);
     }
@@ -405,6 +423,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </form>
             )}
+          </div>
+
+          {/* SECTION 2: PROFIL DU PRÊTEUR & SIGNATURE OFFICIELLE */}
+          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white">Profil du Prêteur</h3>
+                  <p className="text-[11px] text-slate-400">
+                    Coordonnées, préavis & signature officielle pour contrats
+                  </p>
+                </div>
+              </div>
+
+              {isLenderProfileConfigured() ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[11px]">
+                  <CheckCircle2 className="w-3 h-3" /> Configuré
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-[11px]">
+                  À définir
+                </span>
+              )}
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+              Enregistrez vos coordonnées complètes et votre signature dessinée au doigt (Kinshasa, préavis 7 jours par défaut) pour générer automatiquement vos contrats de prêt sous seing privé.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenLenderProfile?.();
+              }}
+              className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold text-xs border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>{isLenderProfileConfigured() ? 'Modifier mon profil et ma signature' : 'Configurer mon profil de prêteur'}</span>
+            </button>
           </div>
 
           {/* SECTION 2: SAUVEGARDE & RESTAURATION JSON + RAPPEL MENSUEL */}

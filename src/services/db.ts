@@ -1,10 +1,12 @@
 import { Debt, Repayment } from '../types/debt';
 import { PlanningTask } from '../types/planning';
+import { Contract, Amendment } from '../types/contract';
 
 const DB_NAME = 'MesDettesDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'debts';
 const TASKS_STORE_NAME = 'tasks';
+const CONTRACTS_STORE_NAME = 'contracts';
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -37,6 +39,13 @@ function openDatabase(): Promise<IDBDatabase> {
         taskStore.createIndex('date', 'date', { unique: false });
         taskStore.createIndex('completed', 'completed', { unique: false });
         taskStore.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains(CONTRACTS_STORE_NAME)) {
+        const contractStore = db.createObjectStore(CONTRACTS_STORE_NAME, { keyPath: 'id' });
+        contractStore.createIndex('debtId', 'debtId', { unique: false });
+        contractStore.createIndex('contractNumber', 'contractNumber', { unique: true });
+        contractStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
     };
   });
@@ -265,14 +274,124 @@ export function saveNotificationSettings(settings: { enabled: boolean; leadDays:
   }
 }
 
-/* ================= Backup & Restore Database Operations ================= */
+/* ================= Contracts CRUD ================= */
 
-export async function replaceEntireDatabase(newDebts: Debt[], newTasks: PlanningTask[]): Promise<void> {
+export async function getAllContracts(): Promise<Contract[]> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME, TASKS_STORE_NAME], 'readwrite');
+    const tx = db.transaction(CONTRACTS_STORE_NAME, 'readonly');
+    const store = tx.objectStore(CONTRACTS_STORE_NAME);
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const contracts: Contract[] = request.result || [];
+      contracts.sort((a, b) => b.createdAt - a.createdAt);
+      resolve(contracts);
+    };
+
+    request.onerror = () => {
+      reject(new Error(`Erreur de lecture des contrats: ${request.error?.message}`));
+    };
+  });
+}
+
+export async function getContractById(id: string): Promise<Contract | null> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CONTRACTS_STORE_NAME, 'readonly');
+    const store = tx.objectStore(CONTRACTS_STORE_NAME);
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      resolve(request.result || null);
+    };
+
+    request.onerror = () => {
+      reject(new Error(`Erreur de lecture du contrat: ${request.error?.message}`));
+    };
+  });
+}
+
+export async function getContractByDebtId(debtId: string): Promise<Contract | null> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CONTRACTS_STORE_NAME, 'readonly');
+    const store = tx.objectStore(CONTRACTS_STORE_NAME);
+    const index = store.index('debtId');
+    const request = index.get(debtId);
+
+    request.onsuccess = () => {
+      resolve(request.result || null);
+    };
+
+    request.onerror = () => {
+      reject(new Error(`Erreur de recherche du contrat pour cette dette: ${request.error?.message}`));
+    };
+  });
+}
+
+export async function saveContract(contract: Contract): Promise<Contract> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CONTRACTS_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(CONTRACTS_STORE_NAME);
+    const request = store.put(contract);
+
+    request.onsuccess = () => {
+      resolve(contract);
+    };
+
+    request.onerror = () => {
+      reject(new Error(`Erreur d'enregistrement du contrat: ${request.error?.message}`));
+    };
+  });
+}
+
+export async function addAmendmentToContract(contractId: string, amendment: Amendment): Promise<Contract> {
+  const contract = await getContractById(contractId);
+  if (!contract) {
+    throw new Error('Contrat introuvable');
+  }
+
+  const updatedContract: Contract = {
+    ...contract,
+    principalAmount: amendment.newPrincipalTotal,
+    amendments: [...(contract.amendments || []), amendment],
+  };
+
+  return await saveContract(updatedContract);
+}
+
+export async function cancelContract(contractId: string, reason: string): Promise<Contract> {
+  const contract = await getContractById(contractId);
+  if (!contract) {
+    throw new Error('Contrat introuvable');
+  }
+
+  const cancelledContract: Contract = {
+    ...contract,
+    status: 'cancelled',
+    cancellationReason: reason.trim(),
+    cancelledAt: new Date().toISOString(),
+  };
+
+  return await saveContract(cancelledContract);
+}
+
+/* ================= Backup & Restore Database Operations ================= */
+
+export async function replaceEntireDatabase(
+  newDebts: Debt[],
+  newTasks: PlanningTask[],
+  newContracts: Contract[] = []
+): Promise<void> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const stores = [STORE_NAME, TASKS_STORE_NAME, CONTRACTS_STORE_NAME];
+    const tx = db.transaction(stores, 'readwrite');
     const debtsStore = tx.objectStore(STORE_NAME);
     const tasksStore = tx.objectStore(TASKS_STORE_NAME);
+    const contractsStore = tx.objectStore(CONTRACTS_STORE_NAME);
 
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(new Error(`Erreur lors du remplacement de la base: ${tx.error?.message}`));
@@ -280,6 +399,7 @@ export async function replaceEntireDatabase(newDebts: Debt[], newTasks: Planning
     // Clear existing
     debtsStore.clear();
     tasksStore.clear();
+    contractsStore.clear();
 
     // Insert new
     for (const debt of newDebts) {
@@ -288,15 +408,24 @@ export async function replaceEntireDatabase(newDebts: Debt[], newTasks: Planning
     for (const task of newTasks) {
       tasksStore.put(task);
     }
+    for (const contract of newContracts) {
+      contractsStore.put(contract);
+    }
   });
 }
 
-export async function mergeDatabase(mergedDebts: Debt[], mergedTasks: PlanningTask[]): Promise<void> {
+export async function mergeDatabase(
+  mergedDebts: Debt[],
+  mergedTasks: PlanningTask[],
+  mergedContracts: Contract[] = []
+): Promise<void> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME, TASKS_STORE_NAME], 'readwrite');
+    const stores = [STORE_NAME, TASKS_STORE_NAME, CONTRACTS_STORE_NAME];
+    const tx = db.transaction(stores, 'readwrite');
     const debtsStore = tx.objectStore(STORE_NAME);
     const tasksStore = tx.objectStore(TASKS_STORE_NAME);
+    const contractsStore = tx.objectStore(CONTRACTS_STORE_NAME);
 
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(new Error(`Erreur lors de la fusion de la base: ${tx.error?.message}`));
@@ -307,7 +436,8 @@ export async function mergeDatabase(mergedDebts: Debt[], mergedTasks: PlanningTa
     for (const task of mergedTasks) {
       tasksStore.put(task);
     }
+    for (const contract of mergedContracts) {
+      contractsStore.put(contract);
+    }
   });
 }
-
-
