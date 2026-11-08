@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Image as ImageIcon,
   FileSignature,
+  FileX,
 } from 'lucide-react';
 import { Debt } from '../types/debt';
 import { getDebtSummary, formatCurrencyValue } from '../utils/debtCalculations';
@@ -69,15 +70,24 @@ export const DebtCard: React.FC<DebtCardProps> = ({ debt, hasContract, onClick }
               </span>
             )}
 
-            {hasContract && (
+            {/* Exactly as requested: badge « Contrat signé » when hasContract, or « Non signée » when unsigned */}
+            {hasContract ? (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-semibold"
-                title="Contrat sous seing privé scellé"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold"
+                title="Contrat sous seing privé signé"
               >
-                <FileSignature className="w-2.5 h-2.5" />
-                <span>Contrat</span>
+                <FileSignature className="w-3 h-3" />
+                <span>Contrat signé</span>
               </span>
-            )}
+            ) : debt.isUnsigned ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-semibold"
+                title="Dette enregistrée sans signature de contrat"
+              >
+                <FileX className="w-3 h-3 text-slate-400" />
+                <span>Non signée</span>
+              </span>
+            ) : null}
           </div>
 
           <div>

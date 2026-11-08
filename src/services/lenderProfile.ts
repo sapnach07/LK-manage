@@ -11,6 +11,7 @@ const DEFAULT_LENDER_PROFILE: LenderProfile = {
   defaultNoticeDays: 7,
   defaultJurisdiction: 'Kinshasa',
   minReadingTimeSeconds: 20,
+  shortLegalClausesEnabled: false,
 };
 
 export function getLenderProfile(): LenderProfile {
@@ -26,6 +27,7 @@ export function getLenderProfile(): LenderProfile {
         defaultJurisdiction: parsed.defaultJurisdiction || 'Kinshasa',
         city: parsed.city || 'Kinshasa',
         minReadingTimeSeconds: parsed.minReadingTimeSeconds !== undefined ? Number(parsed.minReadingTimeSeconds) : 20,
+        shortLegalClausesEnabled: parsed.shortLegalClausesEnabled ?? false,
       };
     }
   } catch (e) {
@@ -43,6 +45,7 @@ export function saveLenderProfile(profile: Partial<LenderProfile>): LenderProfil
     defaultJurisdiction: profile.defaultJurisdiction || current.defaultJurisdiction || 'Kinshasa',
     city: profile.city || current.city || 'Kinshasa',
     minReadingTimeSeconds: profile.minReadingTimeSeconds !== undefined ? Number(profile.minReadingTimeSeconds) : (current.minReadingTimeSeconds ?? 20),
+    shortLegalClausesEnabled: profile.shortLegalClausesEnabled !== undefined ? profile.shortLegalClausesEnabled : (current.shortLegalClausesEnabled ?? false),
   };
 
   if (typeof window !== 'undefined') {

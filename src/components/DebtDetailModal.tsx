@@ -18,12 +18,15 @@ import {
   CalendarPlus,
   Lock,
   FileSignature,
-  FileText,
+  Download,
+  RotateCcw,
+  FileX,
 } from 'lucide-react';
-import { Debt, Repayment } from '../types/debt';
+import { Debt } from '../types/debt';
 import { Contract } from '../types/contract';
 import { getDebtSummary, formatCurrencyValue } from '../utils/debtCalculations';
 import { downloadIcsFile } from '../utils/icsGenerator';
+import { generateContractPdf, shareOrDownloadContractPdf } from '../utils/pdfGenerator';
 import { WhatsAppModal } from './WhatsAppModal';
 import { ProofPhotoViewer } from './ProofPhotoViewer';
 
@@ -35,9 +38,8 @@ interface DebtDetailModalProps {
   onDelete: () => void;
   onAddRepayment: (debtId: string, payment: { amount: number; date: string; note?: string }) => Promise<void>;
   onDeleteRepayment: (debtId: string, repaymentId: string) => Promise<void>;
-  onViewContract?: (contract: Contract) => void;
-  onGenerateContractForDebt?: (debt: Debt) => void;
   onOpenAmendmentForDebt?: (contract: Contract, debt: Debt) => void;
+  onRetryAsNewDebt?: (debt: Debt) => void;
 }
 
 export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
@@ -48,9 +50,8 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
   onDelete,
   onAddRepayment,
   onDeleteRepayment,
-  onViewContract,
-  onGenerateContractForDebt,
   onOpenAmendmentForDebt,
+  onRetryAsNewDebt,
 }) => {
   const summary = getDebtSummary(debt);
 
@@ -64,10 +65,21 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [confirmDeleteDebt, setConfirmDeleteDebt] = useState(false);
+  const [pdfFeedback, setPdfFeedback] = useState<string | null>(null);
 
   const handleSettleRemaining = () => {
     setIsAddingPayment(true);
     setPaymentAmount(String(summary.remainingBalance));
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!contract) return;
+    const doc = generateContractPdf(contract);
+    const filename = `contrat-${contract.contractNumber}.pdf`;
+    const title = `Contrat de prêt ${contract.contractNumber} - ${contract.borrower.fullName}`;
+    const res = await shareOrDownloadContractPdf(doc, filename, title);
+    setPdfFeedback(res === 'shared' ? 'Contrat partagé avec succès.' : 'Contrat PDF téléchargé.');
+    setTimeout(() => setPdfFeedback(null), 3000);
   };
 
   const handleSavePayment = async (e: React.FormEvent) => {
@@ -110,7 +122,7 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
           {/* Header */}
           <div className="flex items-start justify-between pb-3 border-b border-slate-800">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span
                   className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     debt.type === 'on_me_doit'
@@ -128,6 +140,16 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                     </>
                   )}
                 </span>
+
+                {contract ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                    <FileSignature className="w-3 h-3" /> Contrat signé
+                  </span>
+                ) : debt.isUnsigned ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                    <FileX className="w-3 h-3" /> Non signée
+                  </span>
+                ) : null}
 
                 {summary.isSettled ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -172,6 +194,13 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Feedback banner */}
+          {pdfFeedback && (
+            <div className="mt-2 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold text-center">
+              {pdfFeedback}
+            </div>
+          )}
 
           {/* Scrollable Content */}
           <div className="overflow-y-auto py-4 space-y-4 flex-1 pr-1">
@@ -241,9 +270,9 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
               )}
             </div>
 
-            {/* Contrat sous seing privé lié */}
+            {/* CONTRACT ACTIONS SECTION */}
             {contract ? (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/20 text-xs space-y-2">
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/20 text-xs space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileSignature className="w-4 h-4 text-amber-400" />
@@ -262,17 +291,15 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                   </span>
                 </div>
 
+                {/* Exactly as requested: Bouton « Télécharger le contrat (PDF) » */}
                 <div className="flex gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      onClose();
-                      onViewContract?.(contract);
-                    }}
-                    className="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold text-xs border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1"
+                    onClick={handleDownloadPdf}
+                    className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10"
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Consulter / Partager PDF</span>
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Télécharger le contrat (PDF)</span>
                   </button>
 
                   {contract.status !== 'cancelled' && (
@@ -282,7 +309,7 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                         onClose();
                         onOpenAmendmentForDebt?.(contract, debt);
                       }}
-                      className="py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-amber-500/10"
+                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Avenant</span>
@@ -290,21 +317,26 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                   )}
                 </div>
               </div>
-            ) : debt.type === 'on_me_doit' && onGenerateContractForDebt ? (
-              <div className="p-3 rounded-2xl bg-slate-950 border border-dashed border-slate-800 flex items-center justify-between text-xs">
+            ) : debt.isUnsigned ? (
+              /* Sur une dette « Non signée », un bouton « Ressaisir » ouvre un nouveau formulaire pré-rempli pour une NOUVELLE dette */
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
                 <div className="flex items-center gap-2 text-slate-300">
-                  <FileSignature className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Aucun contrat officiel lié</span>
+                  <FileX className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="font-semibold text-white">Dette non signée</span>
                 </div>
+                <p className="text-[11px] text-slate-400">
+                  Cette dette a été enregistrée sans signature. Pour établir un contrat officiel, ouvrez un nouveau formulaire pré-rempli. L'actuelle restera inchangée.
+                </p>
                 <button
                   type="button"
                   onClick={() => {
                     onClose();
-                    onGenerateContractForDebt(debt);
+                    onRetryAsNewDebt?.(debt);
                   }}
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold text-[11px] transition cursor-pointer"
+                  className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  Générer le contrat
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Ressaisir (Créer une nouvelle dette avec contrat)</span>
                 </button>
               </div>
             ) : null}

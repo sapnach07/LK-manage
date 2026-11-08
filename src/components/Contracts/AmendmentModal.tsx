@@ -228,6 +228,7 @@ export const AmendmentModal: React.FC<AmendmentModalProps> = ({
         signedAt: signedAtFormatted,
         readCompletedAt: readCompletedAt || signedAtFormatted,
         newPrincipalTotal: newTotal,
+        templateVersion: 'v2',
         contentDigest: digest,
         amendmentText,
         borrowerSignature,

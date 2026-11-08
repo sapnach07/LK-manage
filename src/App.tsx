@@ -34,6 +34,7 @@ import {
   deleteTask,
   toggleTaskCompleted,
   getAllContracts,
+  saveContract,
   getNotificationSettings,
   saveNotificationSettings,
 } from './services/db';
@@ -259,11 +260,11 @@ export default function App() {
     await refreshTasks();
   };
 
-  // Contract Generation Flow from Debt Form
-  const handleGenerateContractRequest = async (params: {
+  // Contract Flow from Debt Form: NO DEBT IS SAVED AT THIS STAGE!
+  const handleRequestReadAndSign = async (params: {
     debtData: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'>;
     contractParams: {
-      borrowerAddress: string;
+      otherPartyAddress: string;
       deliveryMethods: any[];
       hasDueDate: boolean;
       dueDate?: string;
@@ -275,15 +276,11 @@ export default function App() {
   }) => {
     const lender = getLenderProfile();
     if (!isLenderProfileConfigured(lender)) {
-      // Must configure lender profile & signature first
       setIsLenderProfileOpen(true);
-      throw new Error('Veuillez d’abord renseigner vos coordonnées et votre signature de prêteur.');
+      throw new Error('Veuillez d’abord renseigner vos coordonnées et votre signature officielle dans le profil.');
     }
 
-    // 1. Save or update the debt first
-    const savedDebt = await handleSaveDebt(params.debtData);
-
-    // 2. Prepare contract draft
+    const isJeDois = params.debtData.type === 'je_dois';
     const contractNumber = generateContractNumber(contracts.length);
     const now = new Date();
     const signedAtFormatted = now.toLocaleDateString('fr-FR', {
@@ -294,45 +291,77 @@ export default function App() {
       minute: '2-digit',
     });
 
+    // Lender and Borrower depending on debt type:
+    // If on_me_doit: Lender is user (lender profile), Borrower is other person
+    // If je_dois: Lender is other person, Borrower is user (lender profile)
+    const lenderData = isJeDois
+      ? {
+          fullName: params.debtData.personName,
+          address: params.contractParams.otherPartyAddress,
+          phone: params.debtData.phoneNumber,
+          city: lender.city || 'Kinshasa',
+          jurisdictionCity: lender.defaultJurisdiction || 'Kinshasa',
+        }
+      : {
+          fullName: lender.fullName,
+          address: lender.address,
+          phone: lender.phone,
+          city: lender.city || 'Kinshasa',
+          jurisdictionCity: lender.defaultJurisdiction || 'Kinshasa',
+        };
+
+    const borrowerData = isJeDois
+      ? {
+          fullName: lender.fullName,
+          address: lender.address,
+          phone: lender.phone,
+          identity: params.contractParams.borrowerIdentity,
+        }
+      : {
+          fullName: params.debtData.personName,
+          address: params.contractParams.otherPartyAddress,
+          phone: params.debtData.phoneNumber,
+          identity: params.contractParams.borrowerIdentity,
+        };
+
     const draftBase = {
       id: 'ctr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-      debtId: savedDebt.id,
+      debtId: '', // Will be assigned atomically upon signature validation!
       contractNumber,
       createdAt: Date.now(),
       signedAt: signedAtFormatted,
       status: 'active' as const,
       isLocked: false,
-      lender: {
-        fullName: lender.fullName,
-        address: lender.address,
-        phone: lender.phone,
-        city: lender.city || 'Kinshasa',
-        jurisdictionCity: lender.defaultJurisdiction || 'Kinshasa',
-      },
-      borrower: {
-        fullName: params.debtData.personName,
-        address: params.contractParams.borrowerAddress,
-        phone: params.debtData.phoneNumber,
-        identity: params.contractParams.borrowerIdentity,
-      },
+      debtType: params.debtData.type,
+      lender: lenderData,
+      borrower: borrowerData,
       principalAmount: params.debtData.initialAmount,
       currency: params.debtData.currency,
       startDate: params.debtData.startDate,
       deliveryMethods: params.contractParams.deliveryMethods,
-      interestType: params.debtData.interestType as any,
+      interestType: params.debtData.interestType,
       interestRate: params.debtData.interestRate,
+      fixedInterestAmount: params.debtData.interestFixedAmount,
       hasDueDate: params.contractParams.hasDueDate,
       dueDate: params.contractParams.hasDueDate ? params.contractParams.dueDate : undefined,
       noticeDays: !params.contractParams.hasDueDate ? (params.contractParams.noticeDays || 7) : undefined,
       latePenalty: params.contractParams.latePenalty,
       witness: params.contractParams.witness,
-      lenderSignature: lender.signature,
-      borrowerSignature: '',
+      // For on_me_doit: user is lender, so lenderSignature is ready, borrower will sign live
+      // For je_dois: user is borrower, so borrowerSignature is ready, lender will sign live
+      lenderSignature: isJeDois ? '' : lender.signature,
+      borrowerSignature: isJeDois ? lender.signature : '',
+      templateVersion: 'v2' as const,
       amendments: [],
+      preCalculatedDebt: params.debtData,
     };
 
-    const contractText = buildContractFullText(draftBase);
+    const contractText = buildContractFullText(draftBase as any, {
+      shortLegalClausesEnabled: lender.shortLegalClausesEnabled,
+    });
 
+    // Close form and open reading/signing modal directly
+    setIsFormOpen(false);
     setContractSigningDraft({
       ...draftBase,
       contractText,
@@ -694,6 +723,7 @@ export default function App() {
               onOpenContractDetail={(c) => setSelectedContractForDetail(c)}
               onOpenAmendment={(c) => setContractToAmend(c)}
               onOpenLenderProfile={() => setIsLenderProfileOpen(true)}
+              onOpenDebt={(debtId) => setSelectedDebtId(debtId)}
               onOpenNewDebtWithContract={() => {
                 setEditingDebt(null);
                 setFormDefaultToContract(true);
@@ -711,7 +741,7 @@ export default function App() {
             type="button"
             onClick={() => {
               setEditingDebt(null);
-              setFormDefaultToContract(false);
+              setFormDefaultToContract(true);
               setIsFormOpen(true);
             }}
             className="pointer-events-auto w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-2xl shadow-emerald-950 border border-emerald-400/30 transition cursor-pointer"
@@ -727,13 +757,14 @@ export default function App() {
       {isFormOpen && (
         <DebtFormModal
           initialDebt={editingDebt}
+          existingDebts={debts}
           defaultToContractMode={formDefaultToContract}
-          onSave={handleSaveDebt}
-          onGenerateContractRequest={handleGenerateContractRequest}
+          onSaveWithoutContract={handleSaveDebt}
+          onRequestReadAndSign={handleRequestReadAndSign}
           onClose={() => {
             setIsFormOpen(false);
             setEditingDebt(null);
-            setFormDefaultToContract(false);
+            setFormDefaultToContract(true);
           }}
         />
       )}
@@ -752,11 +783,12 @@ export default function App() {
           onDelete={() => handleDeleteDebt(selectedDebt.id)}
           onAddRepayment={handleAddRepayment}
           onDeleteRepayment={handleDeleteRepayment}
-          onViewContract={(c) => setSelectedContractForDetail(c)}
           onOpenAmendmentForDebt={(c) => setContractToAmend(c)}
-          onGenerateContractForDebt={(d) => {
-            setEditingDebt(d);
+          onRetryAsNewDebt={(d) => {
+            // "Sur une dette « Non signée », un bouton « Ressaisir » ouvre un nouveau formulaire pré-rempli avec ses informations, pour établir un contrat sur une NOUVELLE dette. L'ancienne dette n'est pas modifiée."
+            setEditingDebt(null); // New debt!
             setFormDefaultToContract(true);
+            setSelectedDebtId(null);
             setIsFormOpen(true);
           }}
         />
@@ -766,9 +798,42 @@ export default function App() {
       {contractSigningDraft && (
         <ContractSigningModal
           contractDraft={contractSigningDraft}
-          onContractFinalized={async (signed) => {
-            await refreshContracts();
+          onContractFinalized={async (signed, debtData) => {
+            // Atomic save of both debt AND contract together!
+            if (debtData) {
+              const now = Date.now();
+              const newDebt: Debt = {
+                ...debtData,
+                id: 'debt_' + now + '_' + Math.random().toString(36).substring(2, 7),
+                repayments: [],
+                isUnsigned: false,
+                createdAt: now,
+                updatedAt: now,
+              };
+              await saveDebt(newDebt);
+              signed.debtId = newDebt.id;
+            }
+
+            await saveContract(signed);
+            await Promise.all([refreshDebts(), refreshContracts()]);
             setSelectedContractForDetail(signed);
+            setContractSigningDraft(null);
+          }}
+          onSignCancelled={async (action) => {
+            if (action === 'save_unsigned' && contractSigningDraft.preCalculatedDebt) {
+              const now = Date.now();
+              const unsignedDebt: Debt = {
+                ...contractSigningDraft.preCalculatedDebt,
+                id: 'debt_' + now + '_' + Math.random().toString(36).substring(2, 7),
+                repayments: [],
+                isUnsigned: true,
+                createdAt: now,
+                updatedAt: now,
+              };
+              await saveDebt(unsignedDebt);
+              await refreshDebts();
+            }
+            // If action === 'abandon', nothing is saved!
             setContractSigningDraft(null);
           }}
           onClose={() => setContractSigningDraft(null)}

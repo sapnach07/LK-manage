@@ -2,11 +2,79 @@ import { jsPDF } from 'jspdf';
 import { Contract, Amendment } from '../types/contract';
 
 /**
- * Generates an official, sober loan contract PDF in Times New Roman (100% offline).
- * Includes unique contract number, signature timestamp, SHA-256 fingerprint in footer,
- * and embedded electronic signatures.
+ * Draws a clean signature box with proportional image rendering.
  */
-export function generateContractPdf(contract: Contract): jsPDF {
+function drawSignatureBox(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  role: string,
+  name: string,
+  signatureDataUrl?: string
+) {
+  doc.setDrawColor(180, 180, 180);
+  doc.rect(x, y, width, height);
+
+  doc.setFont('times', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(40, 40, 40);
+  doc.text(role, x + 3, y + 5);
+
+  doc.setFont('times', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(name, x + 3, y + 9);
+
+  if (signatureDataUrl && signatureDataUrl.startsWith('data:image')) {
+    try {
+      const imgProps = doc.getImageProperties(signatureDataUrl);
+      const maxWidth = width - 8;
+      const maxHeight = height - 12;
+      const imgRatio = imgProps.width / imgProps.height;
+      const boxRatio = maxWidth / maxHeight;
+
+      let renderWidth = maxWidth;
+      let renderHeight = maxHeight;
+
+      if (imgRatio > boxRatio) {
+        renderWidth = maxWidth;
+        renderHeight = maxWidth / imgRatio;
+      } else {
+        renderHeight = maxHeight;
+        renderWidth = maxHeight * imgRatio;
+      }
+
+      const offsetX = x + 4 + (maxWidth - renderWidth) / 2;
+      const offsetY = y + 10 + (maxHeight - renderHeight) / 2;
+
+      doc.addImage(signatureDataUrl, 'PNG', offsetX, offsetY, renderWidth, renderHeight);
+    } catch {
+      doc.text('(Signature électronique apposée)', x + 3, y + 16);
+    }
+  } else {
+    doc.text('(Signature électronique)', x + 3, y + 16);
+  }
+}
+
+function extractArticleText(fullText: string, articlePrefix: string): string {
+  const startIndex = fullText.indexOf(articlePrefix);
+  if (startIndex === -1) return '';
+
+  const colonIndex = fullText.indexOf(':', startIndex);
+  if (colonIndex === -1) return '';
+
+  const nextArticleIndex = fullText.indexOf('Art.', colonIndex + 1);
+  const endIndex = nextArticleIndex !== -1 ? nextArticleIndex : fullText.indexOf('Fait à', colonIndex);
+
+  const raw = endIndex !== -1 ? fullText.substring(colonIndex + 1, endIndex) : fullText.substring(colonIndex + 1);
+  return raw.trim().replace(/\n+/g, ' ');
+}
+
+/**
+ * Generates legacy v1 PDF with Articles 1 to 10 and Annexe.
+ */
+export function generateContractPdfV1(contract: Contract): jsPDF {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -19,7 +87,6 @@ export function generateContractPdf(contract: Contract): jsPDF {
   const contentWidth = pageWidth - margin * 2;
   let y = margin;
 
-  // Set font to Times New Roman
   doc.setFont('times', 'bold');
   doc.setFontSize(14);
 
@@ -67,18 +134,15 @@ export function generateContractPdf(contract: Contract): jsPDF {
   doc.text(borrowerLines, margin, y);
   y += borrowerLines.length * 4.5 + 4;
 
-  // Thin separator line
   doc.setDrawColor(180, 180, 180);
   doc.line(margin, y, pageWidth - margin, y);
   y += 5;
 
-  // Articles title
   doc.setFont('times', 'bold');
   doc.setFontSize(10.5);
   doc.text('IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT :', margin, y);
   y += 6;
 
-  // Read lines from the generated contract text
   const articles = [
     { title: 'Art. 1 - Objet', text: extractArticleText(contract.contractText, 'Art. 1') },
     { title: 'Art. 2 - Remise des fonds', text: extractArticleText(contract.contractText, 'Art. 2') },
@@ -110,18 +174,16 @@ export function generateContractPdf(contract: Contract): jsPDF {
     y += bodyLines.length * 4.2 + 3.5;
   }
 
-  // Check page overflow for signatures
   if (y > pageHeight - 55) {
     doc.addPage();
     y = margin;
   }
 
-  // Location and Date
   y += 2;
   doc.setFont('times', 'italic');
   doc.setFontSize(9);
   doc.text(`Fait à ${contract.lender.city || 'Kinshasa'}, le ${contract.signedAt}.`, margin, y);
-  
+
   if (contract.readCompletedAt) {
     y += 4.5;
     doc.setFont('times', 'bolditalic');
@@ -133,11 +195,9 @@ export function generateContractPdf(contract: Contract): jsPDF {
 
   y += 6;
 
-  // Signatures Section
   const signatureBoxWidth = (contentWidth - 6) / (contract.witness?.enabled ? 3 : 2);
   const signatureBoxHeight = 28;
 
-  // 1. Lender
   drawSignatureBox(
     doc,
     margin,
@@ -149,7 +209,6 @@ export function generateContractPdf(contract: Contract): jsPDF {
     contract.lenderSignature
   );
 
-  // 2. Borrower
   drawSignatureBox(
     doc,
     margin + signatureBoxWidth + 6,
@@ -161,7 +220,6 @@ export function generateContractPdf(contract: Contract): jsPDF {
     contract.borrowerSignature
   );
 
-  // 3. Witness (if enabled)
   if (contract.witness?.enabled && contract.witness.fullName.trim()) {
     drawSignatureBox(
       doc,
@@ -177,7 +235,6 @@ export function generateContractPdf(contract: Contract): jsPDF {
 
   y += signatureBoxHeight + 6;
 
-  // Annexe
   if (y > pageHeight - 25) {
     doc.addPage();
     y = margin;
@@ -195,23 +252,15 @@ export function generateContractPdf(contract: Contract): jsPDF {
     y
   );
 
-  // Print Footer with SHA-256 fingerprint on every page
   const totalPages = doc.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
     doc.setFont('times', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(90, 90, 90);
-
-    // Footer divider line
     doc.setDrawColor(200, 200, 200);
     doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-
-    doc.text(
-      `Empreinte numérique SHA-256 : ${contract.contentDigest}`,
-      margin,
-      pageHeight - 8
-    );
+    doc.text(`Empreinte numérique SHA-256 : ${contract.contentDigest}`, margin, pageHeight - 8);
     doc.text(
       `Contrat ${contract.contractNumber} • Signé le ${contract.signedAt} • Page ${p}/${totalPages}`,
       pageWidth - margin,
@@ -224,9 +273,208 @@ export function generateContractPdf(contract: Contract): jsPDF {
 }
 
 /**
- * Generates an official PDF for a contract amendment ("Avenant").
+ * Generates the v2 short one-page PDF ("RECONNAISSANCE DE DETTE N° [numéro]").
+ * Displays the exact v2 text without "Art. 1 à Art. 10", without Annexe.
+ * Fits cleanly on one page with header, clean paragraphs, signatures, and SHA-256 footer.
  */
-export function generateAmendmentPdf(contract: Contract, amendment: Amendment): jsPDF {
+export function generateContractPdfV2(contract: Contract): jsPDF {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 18;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  // Title Box
+  doc.setDrawColor(50, 50, 50);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, contentWidth, 16);
+
+  doc.setFont('times', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(20, 20, 20);
+  doc.text(`RECONNAISSANCE DE DETTE N° ${contract.contractNumber}`, pageWidth / 2, y + 7, {
+    align: 'center',
+  });
+
+  doc.setFont('times', 'italic');
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text('(Acte sous seing privé valant engagement de remboursement)', pageWidth / 2, y + 12, {
+    align: 'center',
+  });
+
+  y += 22;
+
+  // Extract clean paragraphs from contractText, excluding the title and Signatures footer lines
+  const lines = contract.contractText.split('\n');
+  const paragraphs: string[] = [];
+  let currentPara: string[] = [];
+  let inSignatures = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (currentPara.length > 0) {
+        paragraphs.push(currentPara.join(' '));
+        currentPara = [];
+      }
+      continue;
+    }
+    // Skip title line since we rendered the nice box
+    if (trimmed.startsWith('RECONNAISSANCE DE DETTE')) continue;
+
+    // Detect signatures section
+    if (trimmed.startsWith('Signatures :') || trimmed.startsWith('Signatures:')) {
+      inSignatures = true;
+      if (currentPara.length > 0) {
+        paragraphs.push(currentPara.join(' '));
+        currentPara = [];
+      }
+      break;
+    }
+
+    if (!inSignatures) {
+      currentPara.push(trimmed);
+    }
+  }
+
+  if (currentPara.length > 0) {
+    paragraphs.push(currentPara.join(' '));
+  }
+
+  // Print paragraphs with balanced spacing
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(20, 20, 20);
+
+  for (const para of paragraphs) {
+    if (para.startsWith('REMBOURSEMENT :') || para.startsWith('INTÉRÊT :') || para.startsWith('EN CAS DE RETARD :') || para.startsWith('AUTRES SOMMES :') || para.startsWith('REMBOURSEMENTS :') || para.startsWith('PREUVE :')) {
+      // Bold label prefix
+      const colonIdx = para.indexOf(':');
+      const label = para.substring(0, colonIdx + 1);
+      const rest = para.substring(colonIdx + 1);
+
+      doc.setFont('times', 'bold');
+      const labelWidth = doc.getTextWidth(label + ' ');
+      doc.text(label, margin, y);
+
+      doc.setFont('times', 'normal');
+      const splitLines = doc.splitTextToSize(rest.trim(), contentWidth - labelWidth);
+      if (splitLines.length > 0) {
+        doc.text(splitLines[0], margin + labelWidth, y);
+        if (splitLines.length > 1) {
+          const remainingLines = splitLines.slice(1);
+          doc.text(remainingLines, margin, y + 4.8);
+          y += remainingLines.length * 4.8;
+        }
+      }
+      y += 6.5;
+    } else if (para.startsWith('Fait à')) {
+      y += 1.5;
+      doc.setFont('times', 'italic');
+      doc.setFontSize(9.5);
+      doc.text(para, margin, y);
+      y += 6.5;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(10);
+    } else {
+      // Regular paragraph
+      const textLines = doc.splitTextToSize(para, contentWidth);
+      doc.text(textLines, margin, y);
+      y += textLines.length * 4.8 + 2.5;
+    }
+  }
+
+  // Reading completion proof timestamp
+  if (contract.readCompletedAt) {
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`Preuve de lecture : Lecture intégrale terminée le ${contract.readCompletedAt}.`, margin, y);
+    doc.setTextColor(0, 0, 0);
+    y += 5.5;
+  }
+
+  y += 2;
+
+  // Signatures section (compact)
+  const isWitness = !!(contract.witness?.enabled && contract.witness.fullName.trim());
+  const boxWidth = (contentWidth - 6) / (isWitness ? 3 : 2);
+  const boxHeight = 26;
+
+  // Emprunteur, Prêteur, Témoin
+  drawSignatureBox(
+    doc,
+    margin,
+    y,
+    boxWidth,
+    boxHeight,
+    "L'EMPRUNTEUR",
+    contract.borrower.fullName,
+    contract.borrowerSignature
+  );
+
+  drawSignatureBox(
+    doc,
+    margin + boxWidth + 6,
+    y,
+    boxWidth,
+    boxHeight,
+    'LE PRÊTEUR',
+    contract.lender.fullName,
+    contract.lenderSignature
+  );
+
+  if (isWitness && contract.witness?.fullName) {
+    drawSignatureBox(
+      doc,
+      margin + (boxWidth + 3) * 2,
+      y,
+      boxWidth,
+      boxHeight,
+      'LE TÉMOIN',
+      contract.witness.fullName,
+      contract.witnessSignature
+    );
+  }
+
+  // Footer: contract number, timestamp and SHA-256 fingerprint on single page
+  doc.setFont('times', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(90, 90, 90);
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+  doc.text(`Empreinte numérique SHA-256 : ${contract.contentDigest}`, margin, pageHeight - 8);
+  doc.text(
+    `Reconnaissance de dette ${contract.contractNumber} • Signée le ${contract.signedAt} • Page 1/1`,
+    pageWidth - margin,
+    pageHeight - 8,
+    { align: 'right' }
+  );
+
+  return doc;
+}
+
+/**
+ * Contract PDF dispatcher: uses v2 format for new contracts, v1 for legacy contracts.
+ */
+export function generateContractPdf(contract: Contract): jsPDF {
+  if (contract.templateVersion === 'v1') {
+    return generateContractPdfV1(contract);
+  }
+  return generateContractPdfV2(contract);
+}
+
+/**
+ * Generates legacy v1 PDF for an amendment.
+ */
+export function generateAmendmentPdfV1(contract: Contract, amendment: Amendment): jsPDF {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -242,7 +490,6 @@ export function generateAmendmentPdf(contract: Contract, amendment: Amendment): 
   doc.setFont('times', 'bold');
   doc.setFontSize(13);
 
-  // Header Box
   doc.setDrawColor(50, 50, 50);
   doc.setLineWidth(0.3);
   doc.rect(margin, y, contentWidth, 22);
@@ -268,7 +515,6 @@ export function generateAmendmentPdf(contract: Contract, amendment: Amendment): 
   doc.text(`- L'Emprunteur : ${contract.borrower.fullName}, demeurant au ${contract.borrower.address}, tél. : ${contract.borrower.phone}`, margin, y);
   y += 8;
 
-  // Amendment Body
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.text('EXPOSÉ ET CONVENTIONS :', margin, y);
@@ -291,7 +537,6 @@ export function generateAmendmentPdf(contract: Contract, amendment: Amendment): 
     y += 4;
   }
 
-  // Signatures
   const signatureBoxWidth = (contentWidth - 6) / (amendment.witnessSignature ? 3 : 2);
   const signatureBoxHeight = 28;
 
@@ -330,7 +575,6 @@ export function generateAmendmentPdf(contract: Contract, amendment: Amendment): 
     );
   }
 
-  // Footer on page
   doc.setFont('times', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(90, 90, 90);
@@ -346,75 +590,161 @@ export function generateAmendmentPdf(contract: Contract, amendment: Amendment): 
   return doc;
 }
 
-function drawSignatureBox(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  role: string,
-  name: string,
-  signatureDataUrl?: string
-) {
-  doc.setDrawColor(180, 180, 180);
-  doc.rect(x, y, width, height);
+/**
+ * Generates the v2 short 5-line amendment PDF.
+ */
+export function generateAmendmentPdfV2(contract: Contract, amendment: Amendment): jsPDF {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 18;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  // Header Box
+  doc.setDrawColor(50, 50, 50);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, contentWidth, 16);
 
   doc.setFont('times', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(40, 40, 40);
-  doc.text(role, x + 3, y + 5);
+  doc.setFontSize(13);
+  doc.text(`AVENANT N° ${amendment.amendmentNumber}`, pageWidth / 2, y + 7, { align: 'center' });
+  doc.setFont('times', 'italic');
+  doc.setFontSize(9);
+  doc.text(`Au contrat de prêt / reconnaissance de dette N° ${contract.contractNumber}`, pageWidth / 2, y + 12, {
+    align: 'center',
+  });
+
+  y += 24;
+
+  // Extract body lines
+  const lines = amendment.amendmentText.split('\n');
+  const bodyParagraphs: string[] = [];
+  let currentPara: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (currentPara.length > 0) {
+        bodyParagraphs.push(currentPara.join(' '));
+        currentPara = [];
+      }
+      continue;
+    }
+    if (trimmed.startsWith('Signatures :') || trimmed.startsWith('Signatures:')) {
+      if (currentPara.length > 0) {
+        bodyParagraphs.push(currentPara.join(' '));
+        currentPara = [];
+      }
+      break;
+    }
+    currentPara.push(trimmed);
+  }
+  if (currentPara.length > 0) {
+    bodyParagraphs.push(currentPara.join(' '));
+  }
 
   doc.setFont('times', 'normal');
-  doc.setFontSize(7.5);
-  doc.text(name, x + 3, y + 9);
+  doc.setFontSize(10.5);
+  doc.setTextColor(20, 20, 20);
 
-  if (signatureDataUrl && signatureDataUrl.startsWith('data:image')) {
-    try {
-      // jsPDF getImageProperties computes actual image width and height to preserve aspect ratio
-      const imgProps = doc.getImageProperties(signatureDataUrl);
-      const maxWidth = width - 8;
-      const maxHeight = height - 12;
-      const imgRatio = imgProps.width / imgProps.height;
-      const boxRatio = maxWidth / maxHeight;
-
-      let renderWidth = maxWidth;
-      let renderHeight = maxHeight;
-
-      if (imgRatio > boxRatio) {
-        // Image is wider than box ratio
-        renderWidth = maxWidth;
-        renderHeight = maxWidth / imgRatio;
-      } else {
-        // Image is taller than box ratio
-        renderHeight = maxHeight;
-        renderWidth = maxHeight * imgRatio;
-      }
-
-      // Center within signature area
-      const offsetX = x + 4 + (maxWidth - renderWidth) / 2;
-      const offsetY = y + 10 + (maxHeight - renderHeight) / 2;
-
-      doc.addImage(signatureDataUrl, 'PNG', offsetX, offsetY, renderWidth, renderHeight);
-    } catch {
-      doc.text('(Signature électronique apposée)', x + 3, y + 16);
+  for (const p of bodyParagraphs) {
+    if (p.startsWith('Fait à')) {
+      y += 2;
+      doc.setFont('times', 'italic');
+      doc.setFontSize(9.5);
+      doc.text(p, margin, y);
+      y += 7;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(10.5);
+    } else {
+      const splitLines = doc.splitTextToSize(p, contentWidth);
+      doc.text(splitLines, margin, y);
+      y += splitLines.length * 5 + 4;
     }
-  } else {
-    doc.text('(Signature électronique)', x + 3, y + 16);
   }
+
+  if (amendment.readCompletedAt) {
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`Preuve de lecture : Lecture intégrale terminée le ${amendment.readCompletedAt}.`, margin, y);
+    doc.setTextColor(0, 0, 0);
+    y += 6;
+  }
+
+  y += 4;
+
+  // Signatures
+  const isWitness = !!(amendment.witnessSignature && contract.witness?.fullName);
+  const signatureBoxWidth = (contentWidth - 6) / (isWitness ? 3 : 2);
+  const signatureBoxHeight = 26;
+
+  drawSignatureBox(
+    doc,
+    margin,
+    y,
+    signatureBoxWidth,
+    signatureBoxHeight,
+    "L'EMPRUNTEUR",
+    contract.borrower.fullName,
+    amendment.borrowerSignature
+  );
+
+  drawSignatureBox(
+    doc,
+    margin + signatureBoxWidth + 6,
+    y,
+    signatureBoxWidth,
+    signatureBoxHeight,
+    'LE PRÊTEUR',
+    contract.lender.fullName,
+    amendment.lenderSignature
+  );
+
+  if (isWitness && contract.witness?.fullName) {
+    drawSignatureBox(
+      doc,
+      margin + (signatureBoxWidth + 3) * 2,
+      y,
+      signatureBoxWidth,
+      signatureBoxHeight,
+      'LE TÉMOIN',
+      contract.witness.fullName,
+      amendment.witnessSignature
+    );
+  }
+
+  // Footer on page
+  doc.setFont('times', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(90, 90, 90);
+  doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+  doc.text(`Empreinte numérique SHA-256 : ${amendment.contentDigest}`, margin, pageHeight - 8);
+  doc.text(
+    `Avenant n°${amendment.amendmentNumber} au contrat ${contract.contractNumber} • Signé le ${amendment.signedAt} • Page 1/1`,
+    pageWidth - margin,
+    pageHeight - 8,
+    { align: 'right' }
+  );
+
+  return doc;
 }
 
-function extractArticleText(fullText: string, articlePrefix: string): string {
-  const startIndex = fullText.indexOf(articlePrefix);
-  if (startIndex === -1) return '';
-
-  const colonIndex = fullText.indexOf(':', startIndex);
-  if (colonIndex === -1) return '';
-
-  const nextArticleIndex = fullText.indexOf('Art.', colonIndex + 1);
-  const endIndex = nextArticleIndex !== -1 ? nextArticleIndex : fullText.indexOf('Fait à', colonIndex);
-
-  const raw = endIndex !== -1 ? fullText.substring(colonIndex + 1, endIndex) : fullText.substring(colonIndex + 1);
-  return raw.trim().replace(/\n+/g, ' ');
+/**
+ * Amendment PDF dispatcher.
+ */
+export function generateAmendmentPdf(contract: Contract, amendment: Amendment): jsPDF {
+  const version = amendment.templateVersion || contract.templateVersion || 'v2';
+  if (version === 'v1') {
+    return generateAmendmentPdfV1(contract, amendment);
+  }
+  return generateAmendmentPdfV2(contract, amendment);
 }
 
 /**
@@ -440,10 +770,8 @@ export async function shareOrDownloadContractPdf(doc: jsPDF, filename: string, t
       return 'shared';
     } catch (err: unknown) {
       if ((err as Error)?.name === 'AbortError') {
-        // User cancelled share dialog, return shared to avoid force download
         return 'shared';
       }
-      // Fallback to download below
     }
   }
 

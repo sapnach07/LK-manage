@@ -29,11 +29,13 @@ export interface LenderProfile {
   defaultNoticeDays: number; // Default: 7
   defaultJurisdiction: string; // Default: 'Kinshasa'
   minReadingTimeSeconds?: number; // Default: 20 seconds, 0 to disable
+  shortLegalClausesEnabled?: boolean; // Default: false (Clauses juridiques courtes)
 }
 
 export interface Amendment {
   id: string;
   contractId: string;
+  templateVersion?: 'v1' | 'v2'; // 'v1' (old) or 'v2' (new short 5-line)
   amendmentNumber: number; // 1, 2, 3...
   addedAmount: number;
   reason: string;
@@ -52,6 +54,7 @@ export interface Contract {
   id: string; // e.g. "ctr_1731..."
   debtId: string;
   contractNumber: string; // e.g. "CTR-2026-0001"
+  templateVersion?: 'v1' | 'v2'; // 'v1' (old full articles) or 'v2' (new short one-page)
   createdAt: number;
   signedAt: string; // Human date & time or ISO string
   readCompletedAt?: string; // Date and time when reading was completed
@@ -78,14 +81,16 @@ export interface Contract {
   };
 
   // Loan terms
+  debtType?: 'on_me_doit' | 'je_dois'; // 'on_me_doit' (default) or 'je_dois'
   principalAmount: number;
   currency: Currency; // 'FC' | 'USD'
   startDate: string; // YYYY-MM-DD
   deliveryMethods: DeliveryMethod[];
   
   // Interest
-  interestType: 'none' | 'percentage_once' | 'percentage_monthly';
+  interestType: 'none' | 'percentage_once' | 'percentage_monthly' | 'fixed_amount';
   interestRate?: number;
+  fixedInterestAmount?: number;
 
   // Repayment terms
   hasDueDate: boolean;

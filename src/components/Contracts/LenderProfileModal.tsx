@@ -24,6 +24,7 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
   const [defaultNoticeDays, setDefaultNoticeDays] = useState(currentProfile.defaultNoticeDays || 7);
   const [defaultJurisdiction, setDefaultJurisdiction] = useState(currentProfile.defaultJurisdiction || 'Kinshasa');
   const [minReadingTimeSeconds, setMinReadingTimeSeconds] = useState(currentProfile.minReadingTimeSeconds ?? 20);
+  const [shortLegalClausesEnabled, setShortLegalClausesEnabled] = useState(currentProfile.shortLegalClausesEnabled ?? false);
   const [signature, setSignature] = useState<string | null>(currentProfile.signature || null);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -59,6 +60,7 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
       defaultNoticeDays: Number(defaultNoticeDays) || 7,
       defaultJurisdiction: defaultJurisdiction.trim() || 'Kinshasa',
       minReadingTimeSeconds: Number(minReadingTimeSeconds) >= 0 ? Number(minReadingTimeSeconds) : 20,
+      shortLegalClausesEnabled,
       signature,
     });
 
@@ -222,6 +224,24 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
               />
               <span className="text-xs text-slate-400">secondes (20 s par défaut, 0 pour désactiver)</span>
             </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <label htmlFor="short-legal-clauses" className="text-xs font-semibold text-slate-200 block cursor-pointer">
+                Clauses juridiques courtes
+              </label>
+              <span className="text-[11px] text-slate-400">
+                Ajoute mention Code du numérique et compétence du tribunal au contrat court (désactivé par défaut)
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              id="short-legal-clauses"
+              checked={shortLegalClausesEnabled}
+              onChange={(e) => setShortLegalClausesEnabled(e.target.checked)}
+              className="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 cursor-pointer"
+            />
           </div>
 
           {/* Signature dessinée */}

@@ -23,6 +23,7 @@ interface ContractsListProps {
   onOpenAmendment: (contract: Contract) => void;
   onOpenLenderProfile: () => void;
   onOpenNewDebtWithContract: () => void;
+  onOpenDebt?: (debtId: string) => void;
 }
 
 export const ContractsList: React.FC<ContractsListProps> = ({
@@ -32,6 +33,7 @@ export const ContractsList: React.FC<ContractsListProps> = ({
   onOpenAmendment,
   onOpenLenderProfile,
   onOpenNewDebtWithContract,
+  onOpenDebt,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'cancelled'>('all');
@@ -231,6 +233,18 @@ export const ContractsList: React.FC<ContractsListProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {onOpenDebt && contract.debtId && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenDebt(contract.debtId)}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-[11px] transition cursor-pointer flex items-center gap-1 border border-slate-700"
+                        title="Consulter la dette liée"
+                      >
+                        <ArrowRight className="w-3 h-3 text-emerald-400" />
+                        <span>Fiche dette</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={(e) => handleShareQuick(e, contract)}

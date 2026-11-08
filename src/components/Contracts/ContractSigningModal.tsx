@@ -12,12 +12,13 @@ import {
   ArrowLeft,
   BookOpen,
   PenTool,
+  HelpCircle,
 } from 'lucide-react';
 import { Contract } from '../../types/contract';
+import { Debt } from '../../types/debt';
 import { SignaturePad } from './SignaturePad';
 import { computeSha256Digest } from '../../utils/contractGenerator';
 import { generateContractPdf, shareOrDownloadContractPdf } from '../../utils/pdfGenerator';
-import { saveContract } from '../../services/db';
 import { getLenderProfile } from '../../services/lenderProfile';
 
 interface ContractSigningModalProps {
@@ -26,24 +27,28 @@ interface ContractSigningModalProps {
     | 'contractText'
     | 'contentDigest'
     | 'isLocked'
-    | 'borrowerSignature'
-    | 'witnessSignature'
     | 'signedAt'
     | 'readCompletedAt'
   > & {
     contractText: string;
+    preCalculatedDebt?: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'>;
   };
-  onContractFinalized: (contract: Contract) => void;
+  onContractFinalized: (contract: Contract, debtData?: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'>) => void;
+  onSignCancelled: (action: 'save_unsigned' | 'abandon') => void;
   onClose: () => void;
 }
 
 export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
   contractDraft,
   onContractFinalized,
+  onSignCancelled,
   onClose,
 }) => {
   // Step state: 'reading' (Étape 1) or 'signing' (Étape 2) or 'success'
   const [currentStep, setCurrentStep] = useState<'reading' | 'signing' | 'success'>('reading');
+
+  // Cancel confirmation dialog state
+  const [showCancelPrompt, setShowCancelPrompt] = useState(false);
 
   // Reading Timer & Scroll state
   const lenderProfile = useMemo(() => getLenderProfile(), []);
@@ -56,9 +61,12 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Signing state (Étape 2)
+  // Signatures state (Étape 2)
+  const isJeDois = contractDraft.debtType === 'je_dois';
+  // If je_dois: user (lender in contract.borrower) is borrower, the other party is lender.
+  // The other party signs live in person, user's saved signature is automatically applied.
   const [hasAccepted, setHasAccepted] = useState(false);
-  const [borrowerSignature, setBorrowerSignature] = useState<string | null>(null);
+  const [liveSignature, setLiveSignature] = useState<string | null>(null);
   const [witnessSignature, setWitnessSignature] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,16 +110,13 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
     const progress = Math.min(100, Math.round((scrollTop / maxScroll) * 100));
     setScrollProgress(progress);
 
-    // Consider scrolled to end if within 25px of the bottom or 96%
     if (scrollTop + clientHeight >= scrollHeight - 25 || progress >= 98) {
       setHasScrolledToEnd(true);
     }
   };
 
-  // Check initial scrollable height on mount or step change
   useEffect(() => {
     if (currentStep === 'reading') {
-      // Delay slightly to let layout compute
       const timer = setTimeout(() => {
         handleScroll();
       }, 100);
@@ -119,7 +124,6 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
     }
   }, [currentStep]);
 
-  // Completion condition for step 1
   const isReadingComplete = hasScrolledToEnd && secondsRemaining === 0;
 
   // Move from Étape 1 to Étape 2
@@ -142,23 +146,36 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
 
   // Button « Revoir le contrat » allows going back to step 1 (erasing signature entered)
   const handleReviewContract = () => {
-    setBorrowerSignature(null);
+    setLiveSignature(null);
     setWitnessSignature(null);
     setHasAccepted(false);
     setError(null);
     setCurrentStep('reading');
   };
 
+  // Intercept close button if not yet finalized: ask "La personne n'a pas signé"
+  const handleAttemptClose = () => {
+    if (currentStep === 'success') {
+      onClose();
+      return;
+    }
+    setShowCancelPrompt(true);
+  };
+
   const handleSignAndLock = async () => {
     setError(null);
 
     if (!hasAccepted) {
-      setError("L'emprunteur doit cocher la case confirmant la lecture et l'acceptation du contrat.");
+      setError("La case confirmant la lecture et l'acceptation de l'intégralité du contrat doit être cochée.");
       return;
     }
 
-    if (!borrowerSignature) {
-      setError("L'emprunteur doit obligatoirement apposer sa signature électronique au doigt.");
+    if (!liveSignature) {
+      setError(
+        isJeDois
+          ? `Le prêteur (${contractDraft.lender.fullName}) doit obligatoirement apposer sa signature.`
+          : `L'emprunteur (${contractDraft.borrower.fullName}) doit obligatoirement apposer sa signature.`
+      );
       return;
     }
 
@@ -181,6 +198,12 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
       // Compute SHA-256 fingerprint on the contract text
       const digest = await computeSha256Digest(contractDraft.contractText);
 
+      // Distribute signatures based on roles:
+      // If on_me_doit: lenderSignature = saved profile signature, borrowerSignature = liveSignature
+      // If je_dois: borrowerSignature = saved profile signature, lenderSignature = liveSignature
+      const finalLenderSignature = isJeDois ? liveSignature : contractDraft.lenderSignature;
+      const finalBorrowerSignature = isJeDois ? contractDraft.borrowerSignature : liveSignature;
+
       const finalContract: Contract = {
         ...contractDraft,
         signedAt: signedAtFormatted,
@@ -188,15 +211,16 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
         isLocked: true,
         status: 'active',
         contentDigest: digest,
-        borrowerSignature,
+        lenderSignature: finalLenderSignature,
+        borrowerSignature: finalBorrowerSignature,
         witnessSignature: witnessSignature || undefined,
         amendments: [],
       };
 
-      await saveContract(finalContract);
       setSignedContract(finalContract);
       setCurrentStep('success');
-      onContractFinalized(finalContract);
+      // Pass back to parent to atomically save both Debt AND Contract
+      onContractFinalized(finalContract, contractDraft.preCalculatedDebt);
     } catch (err: unknown) {
       setError((err as Error)?.message || "Erreur lors de l'enregistrement du contrat.");
     } finally {
@@ -219,9 +243,18 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
     setTimeout(() => setShareFeedback(null), 3000);
   };
 
+  // Live signing person label
+  const liveSignerName = isJeDois ? contractDraft.lender.fullName : contractDraft.borrower.fullName;
+  const liveSignerRole = isJeDois ? 'Prêteur' : 'Emprunteur';
+
+  // Saved auto-signed person
+  const autoSignerName = isJeDois ? contractDraft.borrower.fullName : contractDraft.lender.fullName;
+  const autoSignerRole = isJeDois ? 'Emprunteur (vous)' : 'Prêteur (vous)';
+  const autoSignatureData = isJeDois ? contractDraft.borrowerSignature : contractDraft.lenderSignature;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xs p-0 sm:p-3">
-      <div className="w-full h-full sm:h-[94vh] max-w-2xl sm:rounded-2xl bg-slate-900 border-0 sm:border border-slate-800 p-4 sm:p-5 shadow-2xl text-slate-100 flex flex-col overflow-hidden">
+      <div className="w-full h-full sm:h-[94vh] max-w-2xl sm:rounded-2xl bg-slate-900 border-0 sm:border border-slate-800 p-4 sm:p-5 shadow-2xl text-slate-100 flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
@@ -243,7 +276,7 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
               </div>
               <p className="text-xs text-slate-400">
                 {currentStep === 'reading'
-                  ? "Lecture intégrale préalable par l'emprunteur"
+                  ? `Lecture préalable obligatoire par ${liveSignerName}`
                   : currentStep === 'signing'
                   ? 'Approbation et signatures électroniques'
                   : 'Horodaté et certifié conforme'}
@@ -252,13 +285,63 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleAttemptClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             aria-label="Fermer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* DIALOG "LA PERSONNE N'A PAS SIGNÉ" */}
+        {showCancelPrompt && (
+          <div className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-5 shadow-2xl text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+                <HelpCircle className="w-6 h-6" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-white">La personne n'a pas signé</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Le contrat n'a pas été finalisé par une signature électronique. Que souhaitez-vous faire ?
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelPrompt(false);
+                    onSignCancelled('save_unsigned');
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md shadow-amber-500/20"
+                >
+                  Enregistrer la dette comme non signée
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelPrompt(false);
+                    onSignCancelled('abandon');
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 font-semibold text-xs border border-slate-700 transition cursor-pointer"
+                >
+                  Abandonner (ne rien enregistrer)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCancelPrompt(false)}
+                  className="w-full py-2 text-xs text-slate-400 hover:text-white transition cursor-pointer"
+                >
+                  Reprendre la signature
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ================= SUCCESS & SHARE VIEW ================= */}
         {currentStep === 'success' && signedContract ? (
@@ -269,9 +352,9 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
 
             <div>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 mb-2">
-                <Lock className="w-3.5 h-3.5" /> Contrat n°{signedContract.contractNumber} scellé et verrouillé
+                <Lock className="w-3.5 h-3.5" /> Contrat n°{signedContract.contractNumber} scellé et enregistré
               </span>
-              <h3 className="text-lg font-bold text-white">Contrat validé avec succès !</h3>
+              <h3 className="text-lg font-bold text-white">Dette & Contrat enregistrés ensemble !</h3>
               <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
                 Signé par {signedContract.borrower.fullName} et {signedContract.lender.fullName}
                 {signedContract.witnessSignature && ` en présence du témoin ${signedContract.witness?.fullName}`}.
@@ -362,7 +445,7 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
                 </span>
                 {secondsRemaining > 0 && (
                   <span className="text-amber-400/90 italic">
-                    Délai minimal de réflexion en cours ({minSeconds}s)
+                    Délai minimal de lecture ({minSeconds}s)
                   </span>
                 )}
               </div>
@@ -428,7 +511,6 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
                 </div>
               </div>
 
-              {/* Button « Revoir le contrat » as required: allows returning to step 1 (erasing current signature) */}
               <button
                 type="button"
                 onClick={handleReviewContract}
@@ -460,29 +542,29 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
 
             {/* Signatures Section */}
             <div className="space-y-4 pt-1">
-              {/* 1. Borrower Signature */}
+              {/* 1. Live Signature of the other party (Borrower if on_me_doit, Lender if je_dois) */}
               <SignaturePad
-                label={`Signature de l'Emprunteur (${contractDraft.borrower.fullName})`}
-                subtitle="Signez au doigt ou au stylet pour valider votre engagement de remboursement."
+                label={`Signature du ${liveSignerRole} (${liveSignerName})`}
+                subtitle={`Signez au doigt ou au stylet pour valider votre engagement en tant que ${liveSignerRole.toLowerCase()}.`}
                 required
-                onSignatureChange={(url) => setBorrowerSignature(url)}
+                onSignatureChange={(url) => setLiveSignature(url)}
               />
 
               {/* 2. Witness Signature (if enabled) */}
               {isWitnessRequired && (
                 <SignaturePad
                   label={`Signature du Témoin (${contractDraft.witness?.fullName})`}
-                  subtitle="Le témoin confirme avoir assisté à la conclusion du présent prêt."
+                  subtitle="Le témoin confirme avoir assisté à la conclusion du présent contrat."
                   required
                   onSignatureChange={(url) => setWitnessSignature(url)}
                 />
               )}
 
-              {/* 3. Lender Signature Preview (automatic) */}
+              {/* 3. Automatic Signature of the user (Lender if on_me_doit, Borrower if je_dois) */}
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-200">
-                    Signature du Prêteur ({contractDraft.lender.fullName})
+                    Signature du {autoSignerRole} ({autoSignerName})
                   </span>
                   <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium">
                     <CheckCircle2 className="w-3 h-3" />
@@ -490,11 +572,15 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
                   </span>
                 </div>
                 <div className="h-16 rounded-lg bg-white border border-slate-700 p-1 flex items-center justify-center">
-                  <img
-                    src={contractDraft.lenderSignature}
-                    alt="Signature du Prêteur"
-                    className="max-h-full object-contain"
-                  />
+                  {autoSignatureData ? (
+                    <img
+                      src={autoSignatureData}
+                      alt={`Signature ${autoSignerRole}`}
+                      className="max-h-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">Signature officielle préenregistrée</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -503,12 +589,12 @@ export const ContractSigningModal: React.FC<ContractSigningModalProps> = ({
             <div className="pt-2">
               <button
                 type="button"
-                disabled={isSubmitting || !hasAccepted || !borrowerSignature || (isWitnessRequired && !witnessSignature)}
+                disabled={isSubmitting || !hasAccepted || !liveSignature || (isWitnessRequired && !witnessSignature)}
                 onClick={handleSignAndLock}
                 className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition cursor-pointer shadow-lg shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs"
               >
                 <Lock className="w-4 h-4" />
-                <span>Valider et Sceller le Contrat</span>
+                <span>Valider et Enregistrer (Dette & Contrat scellés)</span>
               </button>
             </div>
           </div>

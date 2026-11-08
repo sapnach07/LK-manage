@@ -25,11 +25,12 @@ import { calculateInterest, formatCurrencyValue } from '../utils/debtCalculation
 
 interface DebtFormModalProps {
   initialDebt?: Debt | null;
-  onSave: (debtData: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'> & { id?: string }) => Promise<Debt | void>;
-  onGenerateContractRequest?: (params: {
+  existingDebts?: Debt[];
+  onSaveWithoutContract: (debtData: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'> & { id?: string }) => Promise<Debt | void>;
+  onRequestReadAndSign: (params: {
     debtData: Omit<Debt, 'id' | 'createdAt' | 'updatedAt' | 'repayments'>;
     contractParams: {
-      borrowerAddress: string;
+      otherPartyAddress: string;
       deliveryMethods: DeliveryMethod[];
       hasDueDate: boolean;
       dueDate?: string;
@@ -45,10 +46,11 @@ interface DebtFormModalProps {
 
 export const DebtFormModal: React.FC<DebtFormModalProps> = ({
   initialDebt,
-  onSave,
-  onGenerateContractRequest,
+  existingDebts = [],
+  onSaveWithoutContract,
+  onRequestReadAndSign,
   onClose,
-  defaultToContractMode = false,
+  defaultToContractMode = true,
 }) => {
   const isEditing = !!initialDebt;
 
@@ -84,9 +86,10 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
       : ''
   );
 
-  // Contract-specific fields
-  const [wantsContract, setWantsContract] = useState<boolean>(defaultToContractMode || false);
-  const [borrowerAddress, setBorrowerAddress] = useState<string>('');
+  // Interrupteur « Établir un contrat » (activé par défaut comme exigé)
+  // If editing an existing debt, user cannot add contract (only at creation)
+  const [wantsContract, setWantsContract] = useState<boolean>(!isEditing && defaultToContractMode);
+  const [otherPartyAddress, setOtherPartyAddress] = useState<string>('');
   const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>(['especes']);
 
   // Late penalty (only if hasDueDate)
@@ -107,6 +110,10 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
   const [isCompressing, setIsCompressing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Duplicate debt warning dialog
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -194,19 +201,29 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
       interestRate: (interestType === 'percentage_once' || interestType === 'percentage_monthly') ? parsedRate : undefined,
       interestFixedAmount: interestType === 'fixed_amount' ? parsedFixed : undefined,
       proofPhoto,
+      isUnsigned: false,
     };
   };
 
-  // 1. Normal save without contract
-  const handleSubmitStandard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!validateCommonFields()) return;
+  // Anti-doublon check: same name, same amount, same currency, same date
+  const checkIsDuplicate = (): boolean => {
+    return existingDebts.some((d) => {
+      // Exclude self if editing
+      if (isEditing && d.id === initialDebt?.id) return false;
+      const sameName = d.personName.trim().toLowerCase() === personName.trim().toLowerCase();
+      const sameAmount = Math.abs(d.initialAmount - parsedCapital) < 0.001;
+      const sameCurrency = d.currency === currency;
+      const sameDate = d.startDate === startDate;
+      return sameName && sameAmount && sameCurrency && sameDate;
+    });
+  };
 
+  // Execute standard save (without contract)
+  const executeStandardSave = async () => {
     setIsSubmitting(true);
     try {
       const payload = buildDebtPayload();
-      await onSave(isEditing ? { ...payload, id: initialDebt.id } : payload);
+      await onSaveWithoutContract(isEditing ? { ...payload, id: initialDebt.id } : payload);
       onClose();
     } catch (err: unknown) {
       setError((err as Error)?.message || "Erreur lors de l'enregistrement de la dette.");
@@ -215,13 +232,10 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
     }
   };
 
-  // 2. Generate contract directly
-  const handleGenerateContractClick = async () => {
-    setError(null);
-    if (!validateCommonFields()) return;
-
-    if (!borrowerAddress.trim()) {
-      setError("Veuillez renseigner l'adresse de l'emprunteur pour établir le contrat officiel.");
+  // Execute read & sign flow
+  const executeReadAndSign = async () => {
+    if (!otherPartyAddress.trim()) {
+      setError("Veuillez renseigner l'adresse de la personne pour établir le contrat officiel.");
       return;
     }
 
@@ -231,22 +245,17 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
     }
 
     if (borrowerIdEnabled && !borrowerIdNumber.trim()) {
-      setError("Veuillez saisir le numéro de la pièce d'identité de l'emprunteur.");
-      return;
-    }
-
-    if (!onGenerateContractRequest) {
-      setError("Fonction de génération de contrat non disponible.");
+      setError("Veuillez saisir le numéro de la pièce d'identité.");
       return;
     }
 
     setIsSubmitting(true);
     try {
       const debtData = buildDebtPayload();
-      await onGenerateContractRequest({
+      await onRequestReadAndSign({
         debtData,
         contractParams: {
-          borrowerAddress: borrowerAddress.trim(),
+          otherPartyAddress: otherPartyAddress.trim(),
           deliveryMethods,
           hasDueDate,
           dueDate: hasDueDate ? dueDate : undefined,
@@ -275,9 +284,74 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
     }
   };
 
+  // Form submission handler
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!validateCommonFields()) return;
+
+    const actionToRun = wantsContract ? executeReadAndSign : executeStandardSave;
+
+    // Check duplicate
+    if (checkIsDuplicate()) {
+      setPendingAction(() => actionToRun);
+      setShowDuplicateWarning(true);
+      return;
+    }
+
+    await actionToRun();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-xs p-0 sm:p-4">
-      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100 max-h-[92vh] flex flex-col">
+      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100 max-h-[92vh] flex flex-col relative">
+        {/* Anti-doublon Warning Modal */}
+        {showDuplicateWarning && (
+          <div className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-4 rounded-3xl sm:rounded-2xl">
+            <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-amber-500/40 p-5 shadow-2xl text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-white">Cette dette existe déjà</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Une dette portant sur le même montant ({parsedCapital.toLocaleString('fr-FR')} {currency}), le même nom ({personName}) et la même date ({startDate}) est déjà enregistrée.
+                </p>
+                <p className="text-xs font-semibold text-amber-400">
+                  Continuer quand même ?
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDuplicateWarning(false);
+                    setPendingAction(null);
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition cursor-pointer"
+                >
+                  Annuler
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setShowDuplicateWarning(false);
+                    if (pendingAction) {
+                      await pendingAction();
+                    }
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md shadow-amber-500/20"
+                >
+                  Continuer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
@@ -286,8 +360,8 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             </h2>
             <p className="text-xs text-slate-400">
               {type === 'on_me_doit'
-                ? 'Prêt accordé (contrat sous seing privé possible)'
-                : 'Somme empruntée (à rembourser)'}
+                ? 'Prêt accordé à un tiers'
+                : 'Somme empruntée à un tiers'}
             </p>
           </div>
           <button
@@ -301,7 +375,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmitStandard} className="overflow-y-auto py-4 space-y-4 flex-1 text-xs pr-1">
+        <form onSubmit={handleFormSubmit} className="overflow-y-auto py-4 space-y-4 flex-1 text-xs pr-1">
           {error && (
             <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 font-medium flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
@@ -324,10 +398,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => {
-                setType('je_dois');
-                setWantsContract(false);
-              }}
+              onClick={() => setType('je_dois')}
               className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 type === 'je_dois'
                   ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
@@ -338,12 +409,48 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             </button>
           </div>
 
+          {/* INTERRUPTEUR « ÉTABLIR UN CONTRAT » (Activé par défaut à la création) */}
+          {!isEditing && (
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 flex items-center justify-between shadow-inner">
+              <div className="space-y-0.5 pr-2">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <FileSignature className="w-4 h-4 text-amber-400" />
+                  Établir un contrat
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  {wantsContract
+                    ? type === 'on_me_doit'
+                      ? 'L’emprunteur lira et signera sur votre écran avant enregistrement'
+                      : 'Le prêteur lira et signera sur votre écran, votre signature sera jointe'
+                    : 'Enregistrement direct de la dette sans formalisme juridique'}
+                </p>
+              </div>
+
+              {/* Toggle switch */}
+              <button
+                type="button"
+                onClick={() => setWantsContract(!wantsContract)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  wantsContract ? 'bg-amber-500' : 'bg-slate-800'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    wantsContract ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+
           {/* Person details */}
           <div className="space-y-3 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-slate-400" />
-                <span>Nom complet de la personne</span>
+                <span>
+                  {type === 'on_me_doit' ? "Nom complet de l'emprunteur" : 'Nom complet du prêteur'}
+                </span>
                 <span className="text-rose-400">*</span>
               </label>
               <input
@@ -370,18 +477,20 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
               />
             </div>
 
-            {/* Address */}
+            {/* Address of the other party */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>Adresse de résidence</span>
+                <span>
+                  {type === 'on_me_doit' ? "Adresse de l'emprunteur" : 'Adresse du prêteur'}
+                </span>
                 {wantsContract && <span className="text-rose-400">*</span>}
               </label>
               <input
                 type="text"
                 placeholder="Ex: N° 12, Av. Kasavubu, C/ Bandalungwa, Kinshasa"
-                value={borrowerAddress}
-                onChange={(e) => setBorrowerAddress(e.target.value)}
+                value={otherPartyAddress}
+                onChange={(e) => setOtherPartyAddress(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -493,7 +602,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 </div>
               ) : (
                 <div className="space-y-1.5 pl-2 border-l-2 border-slate-700 text-[11px] text-slate-400">
-                  <span>Remboursable sur demande du Prêteur avec un préavis de :</span>
+                  <span>Remboursable sur demande avec un préavis de :</span>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
@@ -510,13 +619,13 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             </div>
           </div>
 
-          {/* CONTRACT SECTION: DELIVERY METHODS, PENALTY, WITNESS, IDENTITY */}
-          {type === 'on_me_doit' && (
+          {/* CONTRACT CLAUSES (Displayed when wantsContract is enabled) */}
+          {wantsContract && (
             <div className="space-y-3.5 p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
                   <FileSignature className="w-4 h-4" />
-                  Clauses du Contrat de prêt
+                  Clauses du Contrat ({type === 'on_me_doit' ? 'Prêt accordé' : 'Dette je dois'})
                 </span>
                 <span className="text-[10px] text-slate-400">Sous seing privé</span>
               </div>
@@ -631,12 +740,12 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 )}
               </div>
 
-              {/* Pièce d'identité de l'emprunteur (désactivée par défaut) */}
+              {/* Pièce d'identité (désactivée par défaut) */}
               <div className="space-y-2 pt-1 border-t border-slate-800/80">
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block">
-                      Pièce d'identité de l'emprunteur
+                      Pièce d'identité de l'autre partie
                     </label>
                     <span className="text-[10px] text-slate-500">Option désactivée par défaut</span>
                   </div>
@@ -809,27 +918,28 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             Annuler
           </button>
 
-          {/* Standard Save */}
-          <button
-            type="button"
-            onClick={handleSubmitStandard}
-            disabled={isSubmitting || isCompressing}
-            className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-          >
-            <Check className="w-4 h-4" />
-            <span>{isEditing ? 'Mettre à jour' : 'Enregistrer la dette'}</span>
-          </button>
-
-          {/* Generate Contract Action (Requested: Puis « Générer le contrat ») */}
-          {type === 'on_me_doit' && onGenerateContractRequest && (
+          {/* MAIN ACTION BUTTON */}
+          {wantsContract ? (
+            /* Activé : « Lire et faire signer » */
             <button
               type="button"
-              onClick={handleGenerateContractClick}
+              onClick={handleFormSubmit}
               disabled={isSubmitting || isCompressing}
               className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
             >
               <FileSignature className="w-4 h-4" />
-              <span>Générer le contrat</span>
+              <span>Lire et faire signer</span>
+            </button>
+          ) : (
+            /* Désactivé : « Enregistrer » */
+            <button
+              type="button"
+              onClick={handleFormSubmit}
+              disabled={isSubmitting || isCompressing}
+              className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950 transition cursor-pointer disabled:opacity-50"
+            >
+              <Check className="w-4 h-4" />
+              <span>{isEditing ? 'Mettre à jour' : 'Enregistrer'}</span>
             </button>
           )}
         </div>

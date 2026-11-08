@@ -31,6 +31,7 @@ export interface Debt {
   interestRate?: number; // Pourcentage (ex: 10 pour 10%)
   interestFixedAmount?: number; // Montant fixe ajouté
   repayments: Repayment[];
+  isUnsigned?: boolean; // Set to true when borrower refused/cancelled signing
   createdAt: number;
   updatedAt: number;
 }
