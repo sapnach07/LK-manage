@@ -23,6 +23,7 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
   const [city, setCity] = useState(currentProfile.city || 'Kinshasa');
   const [defaultNoticeDays, setDefaultNoticeDays] = useState(currentProfile.defaultNoticeDays || 7);
   const [defaultJurisdiction, setDefaultJurisdiction] = useState(currentProfile.defaultJurisdiction || 'Kinshasa');
+  const [minReadingTimeSeconds, setMinReadingTimeSeconds] = useState(currentProfile.minReadingTimeSeconds ?? 20);
   const [signature, setSignature] = useState<string | null>(currentProfile.signature || null);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -57,6 +58,7 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
       city: city.trim() || 'Kinshasa',
       defaultNoticeDays: Number(defaultNoticeDays) || 7,
       defaultJurisdiction: defaultJurisdiction.trim() || 'Kinshasa',
+      minReadingTimeSeconds: Number(minReadingTimeSeconds) >= 0 ? Number(minReadingTimeSeconds) : 20,
       signature,
     });
 
@@ -202,6 +204,23 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
                 placeholder="Kinshasa"
                 className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500"
               />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300">
+              Délai minimal de lecture avant signature
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                max="300"
+                value={minReadingTimeSeconds}
+                onChange={(e) => setMinReadingTimeSeconds(Math.max(0, Number(e.target.value)))}
+                className="w-24 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500"
+              />
+              <span className="text-xs text-slate-400">secondes (20 s par défaut, 0 pour désactiver)</span>
             </div>
           </div>
 

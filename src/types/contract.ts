@@ -28,6 +28,7 @@ export interface LenderProfile {
   signature: string; // Data URL PNG, saved once
   defaultNoticeDays: number; // Default: 7
   defaultJurisdiction: string; // Default: 'Kinshasa'
+  minReadingTimeSeconds?: number; // Default: 20 seconds, 0 to disable
 }
 
 export interface Amendment {
@@ -38,6 +39,7 @@ export interface Amendment {
   reason: string;
   date: string; // YYYY-MM-DD
   signedAt: string; // ISO date-time
+  readCompletedAt?: string; // e.g. "08 novembre 2026 à 16:30"
   newPrincipalTotal: number;
   contentDigest: string; // SHA-256
   amendmentText: string;
@@ -52,6 +54,7 @@ export interface Contract {
   contractNumber: string; // e.g. "CTR-2026-0001"
   createdAt: number;
   signedAt: string; // Human date & time or ISO string
+  readCompletedAt?: string; // Date and time when reading was completed
   isLocked: boolean; // Locked immediately after signature
   status: 'active' | 'cancelled';
   cancellationReason?: string;

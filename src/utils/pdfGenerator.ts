@@ -119,9 +119,19 @@ export function generateContractPdf(contract: Contract): jsPDF {
   // Location and Date
   y += 2;
   doc.setFont('times', 'italic');
-  doc.setFontSize(9.5);
+  doc.setFontSize(9);
   doc.text(`Fait à ${contract.lender.city || 'Kinshasa'}, le ${contract.signedAt}.`, margin, y);
-  y += 7;
+  
+  if (contract.readCompletedAt) {
+    y += 4.5;
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`Preuve de lecture : Lecture intégrale terminée le ${contract.readCompletedAt}.`, margin, y);
+    doc.setTextColor(0, 0, 0);
+  }
+
+  y += 6;
 
   // Signatures Section
   const signatureBoxWidth = (contentWidth - 6) / (contract.witness?.enabled ? 3 : 2);
@@ -268,7 +278,18 @@ export function generateAmendmentPdf(contract: Contract, amendment: Amendment): 
   doc.setFontSize(9.5);
   const bodyTextLines = doc.splitTextToSize(amendment.amendmentText, contentWidth);
   doc.text(bodyTextLines, margin, y);
-  y += bodyTextLines.length * 4.5 + 8;
+  y += bodyTextLines.length * 4.5 + 4;
+
+  if (amendment.readCompletedAt) {
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`Preuve de lecture : Lecture intégrale terminée le ${amendment.readCompletedAt}.`, margin, y);
+    doc.setTextColor(0, 0, 0);
+    y += 5.5;
+  } else {
+    y += 4;
+  }
 
   // Signatures
   const signatureBoxWidth = (contentWidth - 6) / (amendment.witnessSignature ? 3 : 2);
