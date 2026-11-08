@@ -349,8 +349,32 @@ function drawSignatureBox(
 
   if (signatureDataUrl && signatureDataUrl.startsWith('data:image')) {
     try {
-      doc.addImage(signatureDataUrl, 'PNG', x + 4, y + 10, width - 8, height - 12);
-    } catch (e) {
+      // jsPDF getImageProperties computes actual image width and height to preserve aspect ratio
+      const imgProps = doc.getImageProperties(signatureDataUrl);
+      const maxWidth = width - 8;
+      const maxHeight = height - 12;
+      const imgRatio = imgProps.width / imgProps.height;
+      const boxRatio = maxWidth / maxHeight;
+
+      let renderWidth = maxWidth;
+      let renderHeight = maxHeight;
+
+      if (imgRatio > boxRatio) {
+        // Image is wider than box ratio
+        renderWidth = maxWidth;
+        renderHeight = maxWidth / imgRatio;
+      } else {
+        // Image is taller than box ratio
+        renderHeight = maxHeight;
+        renderWidth = maxHeight * imgRatio;
+      }
+
+      // Center within signature area
+      const offsetX = x + 4 + (maxWidth - renderWidth) / 2;
+      const offsetY = y + 10 + (maxHeight - renderHeight) / 2;
+
+      doc.addImage(signatureDataUrl, 'PNG', offsetX, offsetY, renderWidth, renderHeight);
+    } catch {
       doc.text('(Signature électronique apposée)', x + 3, y + 16);
     }
   } else {
