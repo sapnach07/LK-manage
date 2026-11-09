@@ -29,6 +29,8 @@ import {
   deleteDebt,
   addRepaymentToDebt,
   deleteRepaymentFromDebt,
+  addMoneyToDebt,
+  deleteAdditionFromDebt,
   getAllTasks,
   saveTask,
   deleteTask,
@@ -219,6 +221,19 @@ export default function App() {
 
   const handleDeleteRepayment = async (debtId: string, repaymentId: string) => {
     await deleteRepaymentFromDebt(debtId, repaymentId);
+    await refreshDebts();
+  };
+
+  const handleAddMoney = async (
+    debtId: string,
+    addition: { amount: number; date: string; reason: string }
+  ) => {
+    await addMoneyToDebt(debtId, addition);
+    await refreshDebts();
+  };
+
+  const handleDeleteAddition = async (debtId: string, additionId: string) => {
+    await deleteAdditionFromDebt(debtId, additionId);
     await refreshDebts();
   };
 
@@ -792,6 +807,8 @@ export default function App() {
           onDelete={() => handleDeleteDebt(selectedDebt.id)}
           onAddRepayment={handleAddRepayment}
           onDeleteRepayment={handleDeleteRepayment}
+          onAddMoney={handleAddMoney}
+          onDeleteAddition={handleDeleteAddition}
           onOpenAmendmentForDebt={(c) => setContractToAmend(c)}
           onRetryAsNewDebt={(d) => {
             // "Sur une dette « Non signée », un bouton « Ressaisir » ouvre un nouveau formulaire pré-rempli avec ses informations, pour établir un contrat sur une NOUVELLE dette. L'ancienne dette n'est pas modifiée."

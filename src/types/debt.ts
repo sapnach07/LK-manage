@@ -16,6 +16,14 @@ export interface Repayment {
   createdAt: number;
 }
 
+export interface DebtAddition {
+  id: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  reason: string; // note associée / motif de l'ajout
+  createdAt: number;
+}
+
 export interface Debt {
   id: string;
   type: DebtType;
@@ -24,13 +32,14 @@ export interface Debt {
   reason: string; // Motif / note libre
   proofPhoto: string | null; // Image base64 compressée (<= 800px)
   currency: Currency; // 'FC' | 'USD' (strictement séparés)
-  initialAmount: number; // Capital initial
+  initialAmount: number; // Capital (inclut les ajouts successifs)
   startDate: string; // YYYY-MM-DD
   dueDate: string; // YYYY-MM-DD
   interestType: InterestType;
   interestRate?: number; // Pourcentage (ex: 10 pour 10%)
   interestFixedAmount?: number; // Montant fixe ajouté
   repayments: Repayment[];
+  additions?: DebtAddition[]; // Historique des ajouts d'argent avec note associée
   isUnsigned?: boolean; // Set to true when borrower refused/cancelled signing
   createdAt: number;
   updatedAt: number;

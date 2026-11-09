@@ -1,4 +1,4 @@
-import { Debt, Repayment } from '../types/debt';
+import { Debt, Repayment, DebtAddition } from '../types/debt';
 import { PlanningTask } from '../types/planning';
 import { Contract, Amendment } from '../types/contract';
 
@@ -161,6 +161,54 @@ export async function deleteRepaymentFromDebt(debtId: string, repaymentId: strin
   const updatedDebt: Debt = {
     ...debt,
     repayments: (debt.repayments || []).filter((r) => r.id !== repaymentId),
+    updatedAt: Date.now(),
+  };
+
+  return await saveDebt(updatedDebt);
+}
+
+export async function addMoneyToDebt(
+  debtId: string,
+  additionData: { amount: number; date: string; reason: string }
+): Promise<Debt> {
+  const debt = await getDebtById(debtId);
+  if (!debt) {
+    throw new Error('Dette introuvable');
+  }
+
+  const newAddition: DebtAddition = {
+    id: 'add_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    amount: additionData.amount,
+    date: additionData.date,
+    reason: additionData.reason.trim(),
+    createdAt: Date.now(),
+  };
+
+  const updatedDebt: Debt = {
+    ...debt,
+    initialAmount: Math.round(((debt.initialAmount || 0) + additionData.amount) * 100) / 100,
+    additions: [...(debt.additions || []), newAddition],
+    updatedAt: Date.now(),
+  };
+
+  return await saveDebt(updatedDebt);
+}
+
+export async function deleteAdditionFromDebt(debtId: string, additionId: string): Promise<Debt> {
+  const debt = await getDebtById(debtId);
+  if (!debt) {
+    throw new Error('Dette introuvable');
+  }
+
+  const additionToDelete = (debt.additions || []).find((a) => a.id === additionId);
+  if (!additionToDelete) {
+    return debt;
+  }
+
+  const updatedDebt: Debt = {
+    ...debt,
+    initialAmount: Math.max(0, Math.round(((debt.initialAmount || 0) - additionToDelete.amount) * 100) / 100),
+    additions: (debt.additions || []).filter((a) => a.id !== additionId),
     updatedAt: Date.now(),
   };
 

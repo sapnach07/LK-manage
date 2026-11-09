@@ -89,6 +89,13 @@ export function formatCurrencyValue(amount: number, currency: 'FC' | 'USD'): str
 }
 
 /**
+ * Calculates sum of all money additions made to a debt.
+ */
+export function calculateTotalAdditions(debt: Debt): number {
+  return (debt.additions || []).reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+}
+
+/**
  * Computes full summary for a given debt.
  */
 export function getDebtSummary(debt: Debt, asOfDate: Date = new Date()): DebtSummary {

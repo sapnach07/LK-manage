@@ -7,6 +7,7 @@ import {
   calculateDashboardTotals,
   sanitizeWhatsAppPhone,
   buildDefaultWhatsAppMessage,
+  calculateTotalAdditions,
 } from './debtCalculations';
 import { Debt } from '../types/debt';
 
@@ -251,4 +252,29 @@ test('buildDefaultWhatsAppMessage includes balance, reason, and due date', () =>
   assert.ok(msg.includes('Patrick'));
   assert.ok(msg.includes('Frais de transport'));
   assert.ok(msg.includes('75 USD'));
+});
+
+test('calculateTotalAdditions sums all added amounts with associated notes', () => {
+  const debtWithAdditions: Debt = {
+    id: 'd1',
+    type: 'on_me_doit',
+    personName: 'Alain',
+    phoneNumber: '+243810000000',
+    reason: 'Prêt initial',
+    proofPhoto: null,
+    currency: 'USD',
+    initialAmount: 150,
+    startDate: '2026-01-01',
+    dueDate: '2026-02-01',
+    interestType: 'none',
+    repayments: [],
+    additions: [
+      { id: 'a1', amount: 30, date: '2026-01-10', reason: 'Frais de transport', createdAt: 1 },
+      { id: 'a2', amount: 20, date: '2026-01-15', reason: 'Achat fournitures', createdAt: 2 },
+    ],
+    createdAt: 1,
+    updatedAt: 1,
+  };
+
+  assert.equal(calculateTotalAdditions(debtWithAdditions), 50);
 });

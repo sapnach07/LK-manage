@@ -45,6 +45,14 @@ export const DebtCard: React.FC<DebtCardProps> = ({ debt, hasContract, onClick }
                 <ImageIcon className="w-3.5 h-3.5" />
               </span>
             )}
+            {debt.additions && debt.additions.length > 0 && (
+              <span
+                className="text-xs px-1.5 py-0.5 rounded-[4px] bg-[#151A22] text-[#C8A96A] border border-[#2A3340] tabular-nums"
+                title={`${debt.additions.length} ajout(s) d'argent`}
+              >
+                +{debt.additions.length} {debt.additions.length > 1 ? 'ajouts' : 'ajout'}
+              </span>
+            )}
             {hasContract ? (
               <span
                 className="inline-flex items-center gap-1 text-xs text-[#C8A96A]"

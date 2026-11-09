@@ -230,10 +230,18 @@ export const AmendmentModal: React.FC<AmendmentModalProps> = ({
 
       let updatedDebt: Debt | undefined = undefined;
       if (debt) {
+        const amendmentAddition = {
+          id: 'add_' + amendment.id,
+          amount: numAdded,
+          date,
+          reason: `Avenant n°${nextAmendmentNumber} : ${reason.trim()}`,
+          createdAt: Date.now(),
+        };
         updatedDebt = {
           ...debt,
           initialAmount: newTotal,
           reason: `${debt.reason} [Avenant n°${nextAmendmentNumber}: +${numAdded} ${currencyLabel}]`,
+          additions: [...(debt.additions || []), amendmentAddition],
           updatedAt: Date.now(),
         };
         await saveDebt(updatedDebt);
