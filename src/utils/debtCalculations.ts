@@ -85,7 +85,7 @@ export function formatCurrencyValue(amount: number, currency: 'FC' | 'USD'): str
     minimumFractionDigits: 0,
   }).format(amount);
 
-  return currency === 'USD' ? `${formatted} $` : `${formatted} FC`;
+  return currency === 'USD' ? `${formatted} USD` : `${formatted} FC`;
 }
 
 /**

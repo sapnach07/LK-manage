@@ -4,20 +4,15 @@ import {
   Phone,
   Calendar,
   AlertCircle,
-  CheckCircle2,
-  Clock,
   Plus,
   Trash2,
   Edit2,
   MessageSquare,
   Image as ImageIcon,
   Receipt,
-  ArrowDownLeft,
-  ArrowUpRight,
   Check,
   CalendarPlus,
-  Lock,
-  FileSignature,
+  FileCheck2,
   Download,
   RotateCcw,
   FileX,
@@ -78,7 +73,7 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
     const filename = `contrat-${contract.contractNumber}.pdf`;
     const title = `Contrat de prêt ${contract.contractNumber} - ${contract.borrower.fullName}`;
     const res = await shareOrDownloadContractPdf(doc, filename, title);
-    setPdfFeedback(res === 'shared' ? 'Contrat partagé avec succès.' : 'Contrat PDF téléchargé.');
+    setPdfFeedback(res === 'shared' ? 'Contrat partagé.' : 'Contrat PDF téléchargé.');
     setTimeout(() => setPdfFeedback(null), 3000);
   };
 
@@ -88,7 +83,7 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
 
     const amountNum = parseFloat(paymentAmount);
     if (!amountNum || amountNum <= 0) {
-      setPaymentError('Veuillez entrer un montant valide supérieur à 0.');
+      setPaymentError('Veuillez entrer un montant supérieur à 0.');
       return;
     }
 
@@ -102,8 +97,8 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
       setIsAddingPayment(false);
       setPaymentAmount('');
       setPaymentNote('');
-    } catch (err: any) {
-      setPaymentError(err?.message || "Erreur lors de l'ajout du remboursement.");
+    } catch (err: unknown) {
+      setPaymentError((err as Error)?.message || "Erreur lors de l'enregistrement du remboursement.");
     } finally {
       setIsSubmittingPayment(false);
     }
@@ -117,59 +112,51 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-xs p-0 sm:p-4">
-        <div className="w-full max-w-xl rounded-t-3xl sm:rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100 max-h-[92vh] flex flex-col">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4">
+        <div className="w-full max-w-xl rounded-t-[16px] sm:rounded-[16px] bg-[#1C232D] border border-[#2A3340] p-5 text-[#ECE9E2] max-h-[92vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-start justify-between pb-3 border-b border-slate-800">
+          <div className="flex items-start justify-between pb-3 border-b border-[#2A3340]">
             <div>
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    debt.type === 'on_me_doit'
-                      ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-400'
-                      : 'bg-amber-950/70 border border-amber-500/40 text-amber-400'
-                  }`}
-                >
-                  {debt.type === 'on_me_doit' ? (
-                    <>
-                      <ArrowDownLeft className="w-3 h-3" /> On me doit
-                    </>
-                  ) : (
-                    <>
-                      <ArrowUpRight className="w-3 h-3" /> Je dois
-                    </>
-                  )}
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span className="text-xs px-2 py-0.5 rounded-[4px] bg-[#151A22] text-[#ECE9E2] border border-[#2A3340]">
+                  {debt.type === 'on_me_doit' ? 'On me doit' : 'Je dois'}
                 </span>
 
                 {contract ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                    <FileSignature className="w-3 h-3" /> Contrat signé
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[4px] bg-[#151A22] text-[#C8A96A] border border-[#2A3340]">
+                    <FileCheck2 className="w-3.5 h-3.5" />
+                    <span>Contrat signé</span>
                   </span>
                 ) : debt.isUnsigned ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
-                    <FileX className="w-3 h-3" /> Non signée
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[4px] bg-[#151A22] text-[#98A2B0] border border-[#2A3340]">
+                    <FileX className="w-3.5 h-3.5" />
+                    <span>Non signée</span>
                   </span>
                 ) : null}
 
+                {/* Status Dot + Word */}
                 {summary.isSettled ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    <CheckCircle2 className="w-3 h-3" /> Soldée
+                  <span className="inline-flex items-center gap-1.5 text-xs text-[#5FB48C]">
+                    <span className="w-2 h-2 rounded-full bg-[#5FB48C]" />
+                    Soldée
                   </span>
                 ) : summary.isOverdue ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                    <AlertCircle className="w-3 h-3" /> En retard
+                  <span className="inline-flex items-center gap-1.5 text-xs text-[#E5604D]">
+                    <span className="w-2 h-2 rounded-full bg-[#E5604D]" />
+                    En retard
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
-                    <Clock className="w-3 h-3" /> En cours
+                  <span className="inline-flex items-center gap-1.5 text-xs text-[#98A2B0]">
+                    <span className="w-2 h-2 rounded-full bg-[#98A2B0]" />
+                    En cours
                   </span>
                 )}
               </div>
 
-              <h2 className="text-xl font-bold text-white tracking-tight">{debt.personName}</h2>
+              <h2 className="text-xl font-semibold text-[#ECE9E2] tracking-tight">{debt.personName}</h2>
               {debt.phoneNumber && (
-                <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
-                  <Phone className="w-3 h-3 text-slate-500" />
+                <p className="text-sm text-[#98A2B0] flex items-center gap-1.5 mt-0.5">
+                  <Phone className="w-3.5 h-3.5 text-[#98A2B0]" />
                   <span>{debt.phoneNumber}</span>
                 </p>
               )}
@@ -179,15 +166,16 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
               <button
                 type="button"
                 onClick={onEdit}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
-                title="Modifier cette dette"
+                className="w-11 h-11 rounded-[8px] bg-[#151A22] hover:bg-[#252F3D] text-[#ECE9E2] border border-[#2A3340] flex items-center justify-center transition cursor-pointer"
+                title="Modifier la dette"
+                aria-label="Modifier"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                className="w-11 h-11 rounded-[8px] bg-[#151A22] hover:bg-[#252F3D] text-[#ECE9E2] border border-[#2A3340] flex items-center justify-center transition cursor-pointer"
                 aria-label="Fermer"
               >
                 <X className="w-5 h-5" />
@@ -197,108 +185,100 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
 
           {/* Feedback banner */}
           {pdfFeedback && (
-            <div className="mt-2 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold text-center">
+            <div className="mt-2 p-2.5 rounded-[8px] bg-[#151A22] border border-[#5FB48C] text-[#5FB48C] text-sm font-medium text-center">
               {pdfFeedback}
             </div>
           )}
 
           {/* Scrollable Content */}
           <div className="overflow-y-auto py-4 space-y-4 flex-1 pr-1">
-            {/* Primary Remaining Balance Card */}
-            <div className="p-4 rounded-2xl bg-gradient-to-b from-slate-950 to-slate-900 border border-slate-800 shadow-inner">
-              <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+            {/* Primary Remaining Balance Card (no gradient, clean dark register) */}
+            <div className="p-4 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
+              <div className="flex items-center justify-between text-xs text-[#98A2B0] mb-1">
                 <span>Solde restant :</span>
-                <span>{summary.repaymentProgressPercent}% remboursé</span>
+                <span className="tabular-nums">{summary.repaymentProgressPercent}% réglé</span>
               </div>
               <div className="flex items-baseline justify-between mb-3">
                 <span
-                  className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
+                  className={`text-[28px] leading-tight font-semibold tabular-nums ${
                     summary.isSettled
-                      ? 'text-emerald-400'
+                      ? 'text-[#5FB48C] line-through opacity-75'
                       : summary.isOverdue
-                      ? 'text-rose-400'
-                      : 'text-white'
+                      ? 'text-[#E5604D]'
+                      : 'text-[#ECE9E2]'
                   }`}
                 >
                   {formatCurrencyValue(summary.remainingBalance, debt.currency)}
                 </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
+                <span className="text-xs px-2 py-0.5 rounded-[4px] bg-[#1C232D] text-[#98A2B0] border border-[#2A3340]">
                   Devise : {debt.currency}
                 </span>
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden mb-3">
+              <div className="w-full h-1.5 rounded-full bg-[#1C232D] overflow-hidden mb-3">
                 <div
-                  className={`h-full transition-all duration-300 ${
-                    summary.isSettled
-                      ? 'bg-emerald-500'
-                      : debt.type === 'on_me_doit'
-                      ? 'bg-emerald-500'
-                      : 'bg-amber-500'
-                  }`}
+                  className="h-full bg-[#5FB48C] rounded-full transition-all"
                   style={{ width: `${summary.repaymentProgressPercent}%` }}
                 />
               </div>
 
               {/* Breakdown Grid */}
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800/80 text-xs">
+              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#2A3340] text-xs">
                 <div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider">Capital</div>
-                  <div className="font-semibold text-slate-200">
+                  <div className="text-xs text-[#98A2B0]">Capital</div>
+                  <div className="text-sm font-semibold text-[#ECE9E2] tabular-nums mt-0.5">
                     {formatCurrencyValue(summary.capital, debt.currency)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider">Intérêts</div>
-                  <div className="font-semibold text-amber-400">
+                  <div className="text-xs text-[#98A2B0]">Intérêts</div>
+                  <div className="text-sm font-semibold text-[#C8A96A] tabular-nums mt-0.5">
                     +{formatCurrencyValue(summary.interest, debt.currency)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider">Total Dû</div>
-                  <div className="font-semibold text-white">
+                  <div className="text-xs text-[#98A2B0]">Total dû</div>
+                  <div className="text-sm font-semibold text-[#ECE9E2] tabular-nums mt-0.5">
                     {formatCurrencyValue(summary.totalDue, debt.currency)}
                   </div>
                 </div>
               </div>
 
               {summary.interest > 0 && (
-                <div className="mt-2 text-[11px] text-slate-400 bg-slate-900/90 p-2 rounded-lg border border-slate-800/80">
-                  Formule appliquée : <strong className="text-slate-200">{summary.interestFormula}</strong>
+                <div className="mt-2.5 text-xs text-[#98A2B0] bg-[#1C232D] p-2 rounded-[6px] border border-[#2A3340]">
+                  Formule appliquée : <strong className="text-[#ECE9E2] font-medium">{summary.interestFormula}</strong>
                 </div>
               )}
             </div>
 
             {/* CONTRACT ACTIONS SECTION */}
             {contract ? (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/20 text-xs space-y-2.5">
+              <div className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-xs space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileSignature className="w-4 h-4 text-amber-400" />
+                    <FileCheck2 className="w-4 h-4 text-[#C8A96A]" />
                     <div>
-                      <span className="font-bold text-white block">
+                      <span className="font-semibold text-[#ECE9E2] block text-sm">
                         Contrat {contract.contractNumber}
                       </span>
-                      <span className="text-[10px] text-slate-400">
-                        Signé le {contract.signedAt} • Scellé
+                      <span className="text-xs text-[#98A2B0]">
+                        Signé le {contract.signedAt} · Verrouillé
                       </span>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-semibold flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" />
-                    Verrouillé
+                  <span className="text-xs text-[#5FB48C] px-2 py-0.5 rounded-[4px] bg-[#1C232D] border border-[#2A3340]">
+                    Conforme
                   </span>
                 </div>
 
-                {/* Exactly as requested: Bouton « Télécharger le contrat (PDF) » */}
                 <div className="flex gap-2 pt-1">
                   <button
                     type="button"
                     onClick={handleDownloadPdf}
-                    className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10"
+                    className="flex-1 min-h-[44px] py-2 px-3 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] text-[#151A22] font-semibold text-sm transition cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-4 h-4" />
                     <span>Télécharger le contrat (PDF)</span>
                   </button>
 
@@ -309,23 +289,22 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                         onClose();
                         onOpenAmendmentForDebt?.(contract, debt);
                       }}
-                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1"
+                      className="min-h-[44px] py-2 px-3 rounded-[8px] bg-[#1C232D] hover:bg-[#252F3D] text-[#ECE9E2] font-medium text-sm border border-[#2A3340] transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4" />
                       <span>Avenant</span>
                     </button>
                   )}
                 </div>
               </div>
             ) : debt.isUnsigned ? (
-              /* Sur une dette « Non signée », un bouton « Ressaisir » ouvre un nouveau formulaire pré-rempli pour une NOUVELLE dette */
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-slate-300">
-                  <FileX className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="font-semibold text-white">Dette non signée</span>
+              <div className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-[#ECE9E2]">
+                  <FileX className="w-4 h-4 text-[#C8A96A] shrink-0" />
+                  <span className="font-semibold text-sm">Dette enregistrée sans signature</span>
                 </div>
-                <p className="text-[11px] text-slate-400">
-                  Cette dette a été enregistrée sans signature. Pour établir un contrat officiel, ouvrez un nouveau formulaire pré-rempli. L'actuelle restera inchangée.
+                <p className="text-xs text-[#98A2B0] leading-relaxed">
+                  Cette dette a été créée sans signature. Vous pouvez ressaisir un nouveau contrat pré-rempli.
                 </p>
                 <button
                   type="button"
@@ -333,36 +312,40 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                     onClose();
                     onRetryAsNewDebt?.(debt);
                   }}
-                  className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full min-h-[44px] py-2 px-3 rounded-[8px] bg-[#1C232D] hover:bg-[#252F3D] text-[#ECE9E2] font-semibold text-sm border border-[#2A3340] transition cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Ressaisir (Créer une nouvelle dette avec contrat)</span>
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Ressaisir avec contrat</span>
                 </button>
               </div>
             ) : null}
 
-            {/* Dates & Reason Information */}
+            {/* Dates & Due Information */}
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                <div className="text-[10px] text-slate-500 flex items-center gap-1 mb-1">
-                  <Calendar className="w-3 h-3" /> Date de début
+              <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
+                <div className="text-xs text-[#98A2B0] flex items-center gap-1.5 mb-1">
+                  <Calendar className="w-3.5 h-3.5 text-[#98A2B0]" />
+                  <span>Date de début</span>
                 </div>
-                <div className="font-medium text-slate-200">{formatDate(debt.startDate)}</div>
+                <div className="text-sm font-medium text-[#ECE9E2]">{formatDate(debt.startDate)}</div>
               </div>
 
               <div
-                className={`p-3 rounded-xl border ${
+                className={`p-3 rounded-[8px] border ${
                   summary.isOverdue
-                    ? 'bg-rose-950/20 border-rose-800/50 text-rose-300'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-200'
+                    ? 'bg-[#151A22] border-[#E5604D]'
+                    : 'bg-[#151A22] border-[#2A3340]'
                 }`}
               >
-                <div className="text-[10px] flex items-center gap-1 mb-1 opacity-70">
-                  <Calendar className="w-3 h-3" /> Date d'échéance
+                <div className="text-xs text-[#98A2B0] flex items-center gap-1.5 mb-1">
+                  <Calendar className="w-3.5 h-3.5 text-[#98A2B0]" />
+                  <span>Date d'échéance</span>
                 </div>
-                <div className="font-medium">{formatDate(debt.dueDate)}</div>
+                <div className={`text-sm font-medium ${summary.isOverdue ? 'text-[#E5604D]' : 'text-[#ECE9E2]'}`}>
+                  {formatDate(debt.dueDate)}
+                </div>
                 {summary.isOverdue && (
-                  <div className="text-[10px] font-bold text-rose-400 mt-1">Délai dépassé !</div>
+                  <div className="text-xs text-[#E5604D] mt-1">Délai dépassé</div>
                 )}
               </div>
             </div>
@@ -388,39 +371,39 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                     isCompleted: summary.isSettled,
                   });
                 }}
-                className="w-full py-2 px-3 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 text-xs font-medium text-slate-300 border border-slate-800 flex items-center justify-center gap-2 transition cursor-pointer"
+                className="w-full min-h-[44px] py-2 px-3 rounded-[8px] bg-[#151A22] hover:bg-[#1C232D] text-xs font-medium text-[#ECE9E2] border border-[#2A3340] flex items-center justify-center gap-2 transition cursor-pointer"
               >
-                <CalendarPlus className="w-4 h-4 text-emerald-400" />
-                <span>Ajouter l'échéance à l'agenda du téléphone (.ics)</span>
+                <CalendarPlus className="w-4 h-4 text-[#C8A96A]" />
+                <span>Ajouter à l'agenda du téléphone (.ics)</span>
               </button>
             )}
 
             {/* Reason / Free Note */}
             {debt.reason && (
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Motif / Note</div>
-                <p className="text-slate-300 whitespace-pre-wrap">{debt.reason}</p>
+              <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-xs">
+                <div className="text-xs text-[#98A2B0] mb-1">Motif / Note</div>
+                <p className="text-sm text-[#ECE9E2] whitespace-pre-wrap">{debt.reason}</p>
               </div>
             )}
 
             {/* Proof Photo thumbnail */}
             {debt.proofPhoto && (
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <ImageIcon className="w-3.5 h-3.5 text-slate-400" /> Photo de preuve
+              <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-2">
+                <div className="flex items-center justify-between text-xs text-[#98A2B0]">
+                  <span className="flex items-center gap-1.5 font-medium text-[#ECE9E2]">
+                    <ImageIcon className="w-4 h-4 text-[#98A2B0]" /> Photo de preuve
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowPhotoViewer(true)}
-                    className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
+                    className="text-xs text-[#C8A96A] hover:underline cursor-pointer"
                   >
                     Agrandir l'image
                   </button>
                 </div>
                 <div
                   onClick={() => setShowPhotoViewer(true)}
-                  className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 max-h-40 cursor-pointer hover:border-slate-700 transition flex items-center justify-center"
+                  className="rounded-[8px] overflow-hidden border border-[#2A3340] bg-[#151A22] max-h-40 cursor-pointer hover:border-[#98A2B0] transition flex items-center justify-center"
                 >
                   <img
                     src={debt.proofPhoto}
@@ -432,14 +415,14 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
             )}
 
             {/* Partial Repayments Section */}
-            <div className="space-y-3 pt-2 border-t border-slate-800">
+            <div className="space-y-3 pt-2 border-t border-[#2A3340]">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                    <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+                  <h3 className="text-sm font-semibold text-[#ECE9E2] flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-[#98A2B0]" />
                     Remboursements partiels ({debt.repayments?.length || 0})
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-[#98A2B0] tabular-nums">
                     Total remboursé : {formatCurrencyValue(summary.totalRepaid, debt.currency)}
                   </p>
                 </div>
@@ -448,9 +431,9 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsAddingPayment(true)}
-                    className="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-xs font-medium flex items-center gap-1 transition cursor-pointer"
+                    className="min-h-[44px] px-3 py-2 rounded-[8px] bg-[#151A22] hover:bg-[#252F3D] text-[#C8A96A] border border-[#2A3340] text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                     <span>Ajouter un paiement</span>
                   </button>
                 )}
@@ -460,15 +443,15 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
               {isAddingPayment && (
                 <form
                   onSubmit={handleSavePayment}
-                  className="p-3.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-3"
+                  className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#C8A96A] space-y-3"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-400">Nouveau versement reçu / effectué</span>
+                    <span className="text-sm font-semibold text-[#ECE9E2]">Enregistrer un remboursement</span>
                     {summary.remainingBalance > 0 && (
                       <button
                         type="button"
                         onClick={handleSettleRemaining}
-                        className="text-[10px] text-emerald-400 hover:underline"
+                        className="text-xs text-[#C8A96A] hover:underline cursor-pointer"
                       >
                         Solder le reste ({formatCurrencyValue(summary.remainingBalance, debt.currency)})
                       </button>
@@ -476,16 +459,16 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                   </div>
 
                   {paymentError && (
-                    <div className="text-[11px] text-rose-400 flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <div className="text-xs text-[#E5604D] flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>{paymentError}</span>
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">
-                        Montant ({debt.currency}) <span className="text-rose-400">*</span>
+                      <label className="block text-xs text-[#98A2B0] mb-1">
+                        Montant ({debt.currency}) <span className="text-[#E5604D]">*</span>
                       </label>
                       <input
                         type="number"
@@ -495,32 +478,32 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                         value={paymentAmount}
                         onChange={(e) => setPaymentAmount(e.target.value)}
                         placeholder="Montant"
-                        className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:outline-none focus:border-emerald-500"
+                        className="w-full min-h-[44px] px-3 py-2 text-sm bg-[#1C232D] border border-[#2A3340] rounded-[8px] text-[#ECE9E2] font-semibold tabular-nums focus:outline-none focus:border-[#C8A96A]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">
-                        Date <span className="text-rose-400">*</span>
+                      <label className="block text-xs text-[#98A2B0] mb-1">
+                        Date <span className="text-[#E5604D]">*</span>
                       </label>
                       <input
                         type="date"
                         required
                         value={paymentDate}
                         onChange={(e) => setPaymentDate(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full min-h-[44px] px-3 py-2 text-sm bg-[#1C232D] border border-[#2A3340] rounded-[8px] text-[#ECE9E2] focus:outline-none focus:border-[#C8A96A]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] text-slate-400 mb-1">Note / moyen de paiement</label>
+                    <label className="block text-xs text-[#98A2B0] mb-1">Note / moyen de paiement</label>
                     <input
                       type="text"
                       value={paymentNote}
                       onChange={(e) => setPaymentNote(e.target.value)}
-                      placeholder="Ex: Espèces, M-Pesa, Airtel Money, etc."
-                      className="w-full px-2.5 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                      placeholder="Ex: Espèces, M-Pesa, Airtel Money, virement"
+                      className="w-full min-h-[44px] px-3 py-2 text-sm bg-[#1C232D] border border-[#2A3340] rounded-[8px] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A]"
                     />
                   </div>
 
@@ -528,16 +511,16 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsAddingPayment(false)}
-                      className="flex-1 py-1.5 rounded-lg bg-slate-800 text-xs font-medium text-slate-300 hover:bg-slate-700"
+                      className="flex-1 min-h-[44px] py-2 rounded-[8px] bg-[#1C232D] text-sm font-medium text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340]"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmittingPayment}
-                      className="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white flex items-center justify-center gap-1 shadow-md shadow-emerald-950"
+                      className="flex-1 min-h-[44px] py-2 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] text-sm font-semibold text-[#151A22] flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-4 h-4" />
                       <span>{isSubmittingPayment ? 'Enregistrement...' : 'Valider'}</span>
                     </button>
                   </div>
@@ -546,22 +529,22 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
 
               {/* Payments History List */}
               {debt.repayments && debt.repayments.length > 0 ? (
-                <div className="space-y-2">
+                <div className="rounded-[8px] bg-[#151A22] border border-[#2A3340] divide-y divide-[#2A3340] overflow-hidden">
                   {debt.repayments
                     .slice()
                     .sort((a, b) => (b.date > a.date ? 1 : -1))
                     .map((payment) => (
                       <div
                         key={payment.id}
-                        className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-center justify-between text-xs"
+                        className="px-3.5 py-2.5 flex items-center justify-between text-xs"
                       >
                         <div>
-                          <div className="font-semibold text-emerald-400">
+                          <div className="text-sm font-semibold text-[#5FB48C] tabular-nums">
                             +{formatCurrencyValue(payment.amount, debt.currency)}
                           </div>
-                          <div className="text-[11px] text-slate-400">
+                          <div className="text-xs text-[#98A2B0] mt-0.5">
                             {formatDate(payment.date)}
-                            {payment.note && <span className="text-slate-300"> · {payment.note}</span>}
+                            {payment.note && <span className="text-[#ECE9E2]"> · {payment.note}</span>}
                           </div>
                         </div>
 
@@ -572,16 +555,17 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                               onDeleteRepayment(debt.id, payment.id);
                             }
                           }}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
+                          className="w-11 h-11 rounded-[8px] text-[#98A2B0] hover:text-[#E5604D] flex items-center justify-center transition cursor-pointer"
                           title="Supprimer ce versement"
+                          aria-label="Supprimer versement"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     ))}
                 </div>
               ) : (
-                <div className="p-3 text-center rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-xs text-slate-500">
+                <div className="p-3 text-center rounded-[8px] bg-[#151A22] border border-[#2A3340] text-xs text-[#98A2B0]">
                   Aucun remboursement enregistré pour le moment.
                 </div>
               )}
@@ -589,25 +573,25 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
 
             {/* Delete Debt Confirmation Box */}
             {confirmDeleteDebt ? (
-              <div className="p-3.5 rounded-2xl bg-rose-950/30 border border-rose-800/60 space-y-2">
-                <p className="text-xs font-semibold text-rose-300">
-                  Êtes-vous sûr de vouloir supprimer définitivement cette dette ?
+              <div className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#E5604D] space-y-2">
+                <p className="text-sm font-semibold text-[#E5604D]">
+                  Confirmer la suppression de cette dette ?
                 </p>
-                <p className="text-[11px] text-slate-400">
-                  Cette action est irréversible et supprimera également tout l'historique des paiements.
+                <p className="text-xs text-[#98A2B0]">
+                  Cette action est définitive et effacera l'ensemble des remboursements associés.
                 </p>
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setConfirmDeleteDebt(false)}
-                    className="flex-1 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300 hover:bg-slate-700"
+                    className="flex-1 min-h-[44px] py-2 rounded-[8px] bg-[#1C232D] text-xs text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340]"
                   >
                     Conserver
                   </button>
                   <button
                     type="button"
                     onClick={onDelete}
-                    className="flex-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white"
+                    className="flex-1 min-h-[44px] py-2 rounded-[8px] bg-[#E5604D] hover:bg-rose-600 text-xs font-semibold text-white"
                   >
                     Confirmer la suppression
                   </button>
@@ -618,9 +602,9 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteDebt(true)}
-                  className="text-xs text-rose-400/80 hover:text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  className="min-h-[44px] px-3 py-2 text-xs text-[#E5604D] hover:underline flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                   <span>Supprimer cette dette</span>
                 </button>
               </div>
@@ -628,11 +612,11 @@ export const DebtDetailModal: React.FC<DebtDetailModalProps> = ({
           </div>
 
           {/* Footer Primary WhatsApp Button */}
-          <div className="pt-3 border-t border-slate-800">
+          <div className="pt-3 border-t border-[#2A3340]">
             <button
               type="button"
               onClick={() => setShowWhatsApp(true)}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-lg shadow-emerald-950 transition cursor-pointer"
+              className="w-full min-h-[48px] py-3 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] text-base font-semibold text-[#151A22] flex items-center justify-center gap-2 transition cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
               <span>Rappeler par WhatsApp</span>

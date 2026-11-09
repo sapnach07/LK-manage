@@ -4,13 +4,10 @@ import {
   FileText,
   Share2,
   Lock,
-  PlusCircle,
-  AlertTriangle,
+  Plus,
+  AlertCircle,
   ShieldCheck,
-  CheckCircle2,
   Copy,
-  Calendar,
-  User,
   Phone,
   MapPin,
   Ban,
@@ -30,7 +27,7 @@ interface ContractDetailModalProps {
 
 export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   contract,
-  debt,
+  debt: _debt,
   onClose,
   onOpenAmendment,
   onContractUpdated,
@@ -41,7 +38,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const currencySymbol = contract.currency === 'USD' ? '$' : 'FC';
+  const currencyLabel = contract.currency === 'USD' ? 'USD' : 'FC';
 
   const handleShareContract = async () => {
     const doc = generateContractPdf(contract);
@@ -78,29 +75,30 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-xs p-0 sm:p-4">
-      <div className="w-full max-w-xl rounded-t-3xl sm:rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100 max-h-[94vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-xs p-0 sm:p-4">
+      <div className="w-full max-w-xl rounded-t-[16px] sm:rounded-[16px] bg-[#1C232D] border border-[#2A3340] p-4 sm:p-5 text-[#ECE9E2] max-h-[94vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-[#2A3340]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#C8A96A] flex items-center justify-center">
               <FileText className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white">{contract.contractNumber}</h2>
+                <h2 className="text-base font-semibold text-[#ECE9E2]">N° {contract.contractNumber}</h2>
                 {contract.status === 'cancelled' ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 font-semibold">
+                  <span className="inline-flex items-center gap-1 text-[11px] text-[#E5604D]">
+                    <span className="w-2 h-2 rounded-full bg-[#E5604D]" />
                     Annulé
                   </span>
                 ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" />
+                  <span className="inline-flex items-center gap-1 text-[11px] text-[#5FB48C]">
+                    <span className="w-2 h-2 rounded-full bg-[#5FB48C]" />
                     Verrouillé
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#98A2B0]">
                 Signé le {contract.signedAt} • {contract.borrower.fullName}
               </p>
             </div>
@@ -108,7 +106,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="min-h-[44px] min-w-[44px] rounded-[8px] text-[#98A2B0] hover:text-[#ECE9E2] hover:bg-[#151A22] transition flex items-center justify-center cursor-pointer"
             aria-label="Fermer"
           >
             <X className="w-5 h-5" />
@@ -116,20 +114,20 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         </div>
 
         {actionFeedback && (
-          <div className="mt-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium">
+          <div className="mt-3 p-3 rounded-[8px] bg-[#151A22] border border-[#5FB48C] text-[#5FB48C] text-xs font-medium text-center">
             {actionFeedback}
           </div>
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800 pt-2 text-xs">
+        <div className="flex border-b border-[#2A3340] pt-2 text-xs">
           <button
             type="button"
             onClick={() => setActiveTab('details')}
-            className={`py-2 px-3 border-b-2 font-medium transition cursor-pointer ${
+            className={`min-h-[44px] px-3.5 border-b-2 font-medium transition cursor-pointer ${
               activeTab === 'details'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                : 'border-transparent text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
             Synthèse
@@ -137,10 +135,10 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('text')}
-            className={`py-2 px-3 border-b-2 font-medium transition cursor-pointer ${
+            className={`min-h-[44px] px-3.5 border-b-2 font-medium transition cursor-pointer ${
               activeTab === 'text'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                : 'border-transparent text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
             Texte du contrat
@@ -148,14 +146,14 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('amendments')}
-            className={`py-2 px-3 border-b-2 font-medium transition cursor-pointer flex items-center gap-1.5 ${
+            className={`min-h-[44px] px-3.5 border-b-2 font-medium transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'amendments'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                : 'border-transparent text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
             <span>Avenants</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-slate-300">
+            <span className="px-1.5 py-0.5 rounded-[4px] bg-[#151A22] border border-[#2A3340] text-[10px] text-[#98A2B0]">
               {contract.amendments?.length || 0}
             </span>
           </button>
@@ -163,19 +161,18 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
         {/* TAB 1: DETAILS */}
         {activeTab === 'details' && (
-          <div className="overflow-y-auto py-3 space-y-3.5 flex-1 text-xs pr-1">
-            {/* Cancellation alert if cancelled */}
+          <div className="overflow-y-auto py-3 space-y-3 flex-1 text-xs pr-1">
             {contract.status === 'cancelled' && (
-              <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-rose-400">
+              <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#E5604D] text-[#E5604D] space-y-1">
+                <div className="font-semibold flex items-center gap-1.5">
                   <Ban className="w-4 h-4" />
                   <span>Contrat annulé avec traçabilité</span>
                 </div>
-                <p className="text-[11px] text-rose-200">
+                <p className="text-xs text-[#ECE9E2]">
                   Motif : « {contract.cancellationReason} »
                 </p>
                 {contract.cancelledAt && (
-                  <p className="text-[10px] text-rose-400">
+                  <p className="text-[11px] text-[#98A2B0]">
                     Annulé le {new Date(contract.cancelledAt).toLocaleString('fr-FR')}
                   </p>
                 )}
@@ -183,29 +180,29 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             )}
 
             {/* Financial summary card */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div className="p-4 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-2.5">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Capital prêté</span>
-                <span className="text-base font-bold text-amber-400">
-                  {contract.principalAmount.toLocaleString('fr-FR')} {currencySymbol}
+                <span className="text-sm text-[#98A2B0]">Capital prêté</span>
+                <span className="text-20 font-semibold text-[#ECE9E2] tabular-nums">
+                  {contract.principalAmount.toLocaleString('fr-FR')} {currencyLabel}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-[11px] text-slate-400 border-t border-slate-900 pt-2">
-                <span>Modalités de remboursement</span>
-                <span className="text-slate-200">
+              <div className="flex justify-between items-center text-xs text-[#98A2B0] border-t border-[#2A3340] pt-2">
+                <span>Remboursement</span>
+                <span className="text-[#ECE9E2]">
                   {contract.hasDueDate && contract.dueDate
                     ? `Échéance le ${new Date(contract.dueDate).toLocaleDateString('fr-FR')}`
                     : `Sur demande (préavis de ${contract.noticeDays || 7} jours)`}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-[11px] text-slate-400 border-t border-slate-900 pt-2">
+              <div className="flex justify-between items-center text-xs text-[#98A2B0] border-t border-[#2A3340] pt-2">
                 <span>Régime d'intérêts</span>
-                <span className="text-slate-200">
+                <span className="text-[#ECE9E2]">
                   {contract.interestType === 'none'
                     ? 'Aucun intérêt'
                     : contract.interestType === 'percentage_once'
                     ? `${contract.interestRate}% unique`
-                    : `${contract.interestRate}% / mois simple`}
+                    : `${contract.interestRate}% / mois`}
                 </span>
               </div>
             </div>
@@ -213,73 +210,73 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             {/* Parties */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {/* Lender */}
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
+              <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-1">
+                <span className="text-[11px] text-[#C8A96A] font-semibold block">
                   Prêteur
                 </span>
-                <p className="font-bold text-white">{contract.lender.fullName}</p>
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-slate-500" />
+                <p className="text-sm font-semibold text-[#ECE9E2]">{contract.lender.fullName}</p>
+                <p className="text-xs text-[#98A2B0] flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5" />
                   {contract.lender.phone}
                 </p>
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-slate-500" />
+                <p className="text-xs text-[#98A2B0] flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5" />
                   {contract.lender.address}
                 </p>
               </div>
 
               {/* Borrower */}
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
+              <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-1">
+                <span className="text-[11px] text-[#5FB48C] font-semibold block">
                   Emprunteur
                 </span>
-                <p className="font-bold text-white">{contract.borrower.fullName}</p>
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-slate-500" />
+                <p className="text-sm font-semibold text-[#ECE9E2]">{contract.borrower.fullName}</p>
+                <p className="text-xs text-[#98A2B0] flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5" />
                   {contract.borrower.phone}
                 </p>
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-slate-500" />
+                <p className="text-xs text-[#98A2B0] flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5" />
                   {contract.borrower.address}
                 </p>
               </div>
             </div>
 
             {/* SHA-256 fingerprint box */}
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-1.5">
+              <div className="flex items-center justify-between text-xs text-[#98A2B0]">
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <ShieldCheck className="w-4 h-4 text-[#5FB48C]" />
                   <span>Empreinte cryptographique SHA-256</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => navigator.clipboard.writeText(contract.contentDigest)}
-                  className="text-amber-400 hover:underline flex items-center gap-0.5 text-[10px]"
+                  className="text-[#C8A96A] hover:underline flex items-center gap-1 text-xs"
                 >
-                  <Copy className="w-2.5 h-2.5" />
+                  <Copy className="w-3 h-3" />
                   <span>Copier</span>
                 </button>
               </div>
-              <p className="font-mono text-[9px] text-slate-400 break-all bg-slate-900 p-2 rounded-lg border border-slate-800 select-all">
+              <p className="font-mono text-[11px] text-[#98A2B0] break-all bg-[#1C232D] p-2 rounded-[8px] border border-[#2A3340] select-all">
                 {contract.contentDigest}
               </p>
             </div>
 
             {/* Signatures preview */}
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-              <span className="text-xs font-semibold text-slate-300 block">Signatures apposées</span>
+            <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-2">
+              <span className="text-xs font-semibold text-[#ECE9E2] block">Signatures apposées</span>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <div className="bg-white rounded-lg p-1.5 flex flex-col items-center">
-                  <span className="text-[9px] text-slate-500 font-bold">Prêteur</span>
+                <div className="bg-white rounded-[8px] p-2 flex flex-col items-center">
+                  <span className="text-[11px] text-slate-600 font-semibold">Prêteur</span>
                   <img
                     src={contract.lenderSignature}
                     alt="Signature Prêteur"
                     className="h-10 object-contain"
                   />
                 </div>
-                <div className="bg-white rounded-lg p-1.5 flex flex-col items-center">
-                  <span className="text-[9px] text-slate-500 font-bold">Emprunteur</span>
+                <div className="bg-white rounded-[8px] p-2 flex flex-col items-center">
+                  <span className="text-[11px] text-slate-600 font-semibold">Emprunteur</span>
                   <img
                     src={contract.borrowerSignature}
                     alt="Signature Emprunteur"
@@ -287,8 +284,8 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   />
                 </div>
                 {contract.witnessSignature && (
-                  <div className="bg-white rounded-lg p-1.5 flex flex-col items-center">
-                    <span className="text-[9px] text-slate-500 font-bold">Témoin</span>
+                  <div className="bg-white rounded-[8px] p-2 flex flex-col items-center">
+                    <span className="text-[11px] text-slate-600 font-semibold">Témoin</span>
                     <img
                       src={contract.witnessSignature}
                       alt="Signature Témoin"
@@ -305,7 +302,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={handleShareContract}
-                  className="flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-xs"
+                  className="flex-1 min-h-[44px] px-4 rounded-[8px] bg-[#C8A96A] hover:bg-[#d6b777] text-[#151A22] font-semibold transition cursor-pointer flex items-center justify-center gap-2 text-sm"
                 >
                   <Share2 className="w-4 h-4" />
                   <span>Partager le PDF officiel</span>
@@ -318,10 +315,10 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       onClose();
                       onOpenAmendment(contract);
                     }}
-                    className="py-3 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition cursor-pointer flex items-center gap-1.5 text-xs"
+                    className="min-h-[44px] px-4 rounded-[8px] bg-[#151A22] hover:bg-[#2A3340] text-[#ECE9E2] border border-[#2A3340] font-semibold transition cursor-pointer flex items-center gap-1.5 text-xs"
                     title="Ajouter des fonds avec un avenant"
                   >
-                    <PlusCircle className="w-4 h-4 text-emerald-400" />
+                    <Plus className="w-4 h-4 text-[#5FB48C]" />
                     <span>Avenant</span>
                   </button>
                 )}
@@ -331,19 +328,19 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowCancelPrompt(true)}
-                  className="w-full text-center text-[11px] text-rose-400/80 hover:text-rose-300 transition py-1 cursor-pointer"
+                  className="w-full min-h-[44px] text-center text-xs text-[#E5604D] hover:underline transition cursor-pointer"
                 >
                   Annuler ce contrat (avec trace horodatée)...
                 </button>
               )}
 
               {showCancelPrompt && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-2">
-                  <span className="text-xs font-bold text-rose-300 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4" />
+                <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#E5604D] space-y-2">
+                  <span className="text-xs font-semibold text-[#E5604D] flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4" />
                     Confirmation de l'annulation
                   </span>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-xs text-[#98A2B0]">
                     Le contrat restera archivé avec son empreinte SHA-256 mais sera marqué comme annulé.
                   </p>
                   <input
@@ -352,13 +349,13 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     placeholder="Motif de l'annulation (ex: accord amiable, erreur de saisie)"
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-600 focus:outline-none text-xs"
+                    className="w-full min-h-[44px] px-3 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none text-xs"
                   />
                   <div className="flex justify-end gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => setShowCancelPrompt(false)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs"
+                      className="min-h-[44px] px-3.5 rounded-[8px] bg-[#1C232D] text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340] text-xs font-medium cursor-pointer"
                     >
                       Retour
                     </button>
@@ -366,7 +363,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       type="button"
                       disabled={isProcessing || !cancelReason.trim()}
                       onClick={handleConfirmCancel}
-                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs disabled:opacity-50"
+                      className="min-h-[44px] px-4 rounded-[8px] bg-[#E5604D] hover:bg-[#eb7463] text-white font-semibold text-xs disabled:opacity-50 cursor-pointer"
                     >
                       Confirmer l'annulation
                     </button>
@@ -380,15 +377,15 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         {/* TAB 2: FULL TEXT */}
         {activeTab === 'text' && (
           <div className="overflow-y-auto py-3 space-y-3 flex-1 text-xs pr-1">
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 whitespace-pre-line font-serif text-[12px] leading-relaxed text-slate-200 select-text">
+            <div className="p-4 rounded-[8px] bg-[#151A22] border border-[#2A3340] whitespace-pre-line font-serif text-[13px] leading-relaxed text-[#ECE9E2] select-text">
               {contract.contractText}
             </div>
             <button
               type="button"
               onClick={handleShareContract}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] rounded-[8px] bg-[#151A22] hover:bg-[#2A3340] text-[#ECE9E2] border border-[#2A3340] font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className="w-4 h-4" />
               <span>Partager le PDF du contrat</span>
             </button>
           </div>
@@ -399,9 +396,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           <div className="overflow-y-auto py-3 space-y-3 flex-1 text-xs pr-1">
             {(!contract.amendments || contract.amendments.length === 0) ? (
               <div className="p-8 text-center space-y-2">
-                <FileText className="w-10 h-10 text-slate-600 mx-auto" />
-                <p className="text-slate-400 font-medium">Aucun avenant pour ce contrat</p>
-                <p className="text-[11px] text-slate-500">
+                <FileText className="w-10 h-10 text-[#98A2B0] mx-auto" />
+                <p className="text-[#ECE9E2] font-semibold">Aucun avenant pour ce contrat</p>
+                <p className="text-xs text-[#98A2B0]">
                   Toute somme supplémentaire remise à l'emprunteur doit faire l'objet d'un avenant officiel.
                 </p>
                 {contract.status !== 'cancelled' && (
@@ -411,9 +408,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       onClose();
                       onOpenAmendment(contract);
                     }}
-                    className="mt-3 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold inline-flex items-center gap-1.5 cursor-pointer text-xs"
+                    className="mt-3 min-h-[44px] px-4 rounded-[8px] bg-[#C8A96A] hover:bg-[#d6b777] text-[#151A22] font-semibold inline-flex items-center gap-1.5 cursor-pointer text-xs"
                   >
-                    <PlusCircle className="w-4 h-4" />
+                    <Plus className="w-4 h-4" />
                     <span>Créer un avenant</span>
                   </button>
                 )}
@@ -427,9 +424,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       onClose();
                       onOpenAmendment(contract);
                     }}
-                    className="w-full py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 font-bold flex items-center justify-center gap-2 cursor-pointer text-xs"
+                    className="w-full min-h-[44px] rounded-[8px] bg-[#151A22] hover:bg-[#2A3340] text-[#C8A96A] border border-[#2A3340] font-semibold flex items-center justify-center gap-2 cursor-pointer text-xs"
                   >
-                    <PlusCircle className="w-4 h-4" />
+                    <Plus className="w-4 h-4" />
                     <span>Ajouter un nouvel avenant</span>
                   </button>
                 )}
@@ -437,19 +434,19 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 {contract.amendments.map((am) => (
                   <div
                     key={am.id}
-                    className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2"
+                    className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-2"
                   >
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-xs">
+                          <span className="font-semibold text-[#ECE9E2] text-xs">
                             Avenant N° {am.amendmentNumber}
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                            + {am.addedAmount.toLocaleString('fr-FR')} {currencySymbol}
+                          <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-[#1C232D] border border-[#2A3340] text-[#5FB48C] tabular-nums">
+                            + {am.addedAmount.toLocaleString('fr-FR')} {currencyLabel}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
+                        <p className="text-xs text-[#98A2B0] mt-0.5">
                           Remis le {new Date(am.date).toLocaleDateString('fr-FR')} • {am.reason}
                         </p>
                       </div>
@@ -457,21 +454,21 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleShareAmendment(am)}
-                        className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800 transition cursor-pointer"
+                        className="min-h-[44px] min-w-[44px] rounded-[8px] bg-[#1C232D] hover:bg-[#2A3340] text-[#ECE9E2] border border-[#2A3340] transition cursor-pointer flex items-center justify-center"
                         title="Partager cet avenant PDF"
                       >
-                        <Share2 className="w-3.5 h-3.5" />
+                        <Share2 className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="flex justify-between items-center text-[11px] text-slate-400 border-t border-slate-900 pt-2">
+                    <div className="flex justify-between items-center text-xs text-[#98A2B0] border-t border-[#2A3340] pt-2">
                       <span>Nouveau total</span>
-                      <span className="font-bold text-amber-400">
-                        {am.newPrincipalTotal.toLocaleString('fr-FR')} {currencySymbol}
+                      <span className="font-semibold text-[#ECE9E2] tabular-nums">
+                        {am.newPrincipalTotal.toLocaleString('fr-FR')} {currencyLabel}
                       </span>
                     </div>
 
-                    <div className="text-[9px] font-mono text-slate-500 truncate">
+                    <div className="text-[10px] font-mono text-[#98A2B0] truncate">
                       SHA-256 : {am.contentDigest}
                     </div>
                   </div>

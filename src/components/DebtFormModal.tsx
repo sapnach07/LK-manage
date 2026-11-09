@@ -303,22 +303,22 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-xs p-0 sm:p-4">
-      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100 max-h-[92vh] flex flex-col relative">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4">
+      <div className="w-full max-w-lg rounded-t-[16px] sm:rounded-[16px] bg-[#1C232D] border border-[#2A3340] p-5 text-[#ECE9E2] max-h-[92vh] flex flex-col relative">
         {/* Anti-doublon Warning Modal */}
         {showDuplicateWarning && (
-          <div className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-4 rounded-3xl sm:rounded-2xl">
-            <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-amber-500/40 p-5 shadow-2xl text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+          <div className="absolute inset-0 z-50 bg-[#151A22]/95 flex items-center justify-center p-4 rounded-t-[16px] sm:rounded-[16px]">
+            <div className="w-full max-w-sm rounded-[16px] bg-[#1C232D] border border-[#2A3340] p-5 text-center space-y-4">
+              <div className="w-11 h-11 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#C8A96A] flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" />
               </div>
 
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-white">Cette dette existe déjà</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-base font-semibold text-[#ECE9E2]">Cette dette existe déjà</h3>
+                <p className="text-sm text-[#98A2B0] leading-relaxed">
                   Une dette portant sur le même montant ({parsedCapital.toLocaleString('fr-FR')} {currency}), le même nom ({personName}) et la même date ({startDate}) est déjà enregistrée.
                 </p>
-                <p className="text-xs font-semibold text-amber-400">
+                <p className="text-sm font-medium text-[#C8A96A]">
                   Continuer quand même ?
                 </p>
               </div>
@@ -330,7 +330,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                     setShowDuplicateWarning(false);
                     setPendingAction(null);
                   }}
-                  className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition cursor-pointer"
+                  className="min-h-[44px] py-2 px-3 rounded-[8px] bg-[#151A22] hover:bg-[#252F3D] text-[#ECE9E2] font-medium text-sm border border-[#2A3340] transition cursor-pointer"
                 >
                   Annuler
                 </button>
@@ -343,7 +343,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                       await pendingAction();
                     }
                   }}
-                  className="py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow-md shadow-amber-500/20"
+                  className="min-h-[44px] py-2 px-3 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] text-[#151A22] font-semibold text-sm transition cursor-pointer"
                 >
                   Continuer
                 </button>
@@ -353,12 +353,12 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-[#2A3340]">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <h2 className="text-base font-semibold text-[#ECE9E2] flex items-center gap-2">
               {isEditing ? 'Modifier la dette' : type === 'on_me_doit' ? 'Nouveau prêt / Créance' : 'Nouvelle dette'}
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#98A2B0]">
               {type === 'on_me_doit'
                 ? 'Prêt accordé à un tiers'
                 : 'Somme empruntée à un tiers'}
@@ -367,7 +367,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="w-11 h-11 rounded-[8px] text-[#98A2B0] hover:text-[#ECE9E2] hover:bg-[#151A22] flex items-center justify-center transition cursor-pointer"
             aria-label="Fermer"
           >
             <X className="w-5 h-5" />
@@ -375,23 +375,23 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleFormSubmit} className="overflow-y-auto py-4 space-y-4 flex-1 text-xs pr-1">
+        <form onSubmit={handleFormSubmit} className="overflow-y-auto py-4 space-y-3 flex-1 text-xs pr-1">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#E5604D] text-[#E5604D] font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#E5604D]" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Type selector */}
-          <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-950 border border-slate-800">
+          <div className="grid grid-cols-2 gap-2 p-1 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
             <button
               type="button"
               onClick={() => setType('on_me_doit')}
-              className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`min-h-[44px] py-2 px-3 rounded-[6px] text-sm font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 type === 'on_me_doit'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#C8A96A] text-[#151A22]'
+                  : 'text-[#98A2B0] hover:text-[#ECE9E2]'
               }`}
             >
               <span>On me doit (Prêt)</span>
@@ -399,10 +399,10 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             <button
               type="button"
               onClick={() => setType('je_dois')}
-              className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`min-h-[44px] py-2 px-3 rounded-[6px] text-sm font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 type === 'je_dois'
-                  ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#1C232D] text-[#ECE9E2] border border-[#C8A96A]'
+                  : 'text-[#98A2B0] hover:text-[#ECE9E2]'
               }`}
             >
               <span>Je dois</span>
@@ -411,13 +411,13 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
 
           {/* INTERRUPTEUR « ÉTABLIR UN CONTRAT » (Activé par défaut à la création) */}
           {!isEditing && (
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/30 flex items-center justify-between shadow-inner">
+            <div className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340] flex items-center justify-between">
               <div className="space-y-0.5 pr-2">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <FileSignature className="w-4 h-4 text-amber-400" />
+                <span className="text-sm font-semibold text-[#ECE9E2] flex items-center gap-2">
+                  <FileSignature className="w-4 h-4 text-[#C8A96A]" />
                   Établir un contrat
                 </span>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-xs text-[#98A2B0]">
                   {wantsContract
                     ? type === 'on_me_doit'
                       ? 'L’emprunteur lira et signera sur votre écran avant enregistrement'
@@ -426,17 +426,18 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 </p>
               </div>
 
-              {/* Toggle switch */}
+              {/* Toggle switch (44px touch) */}
               <button
                 type="button"
                 onClick={() => setWantsContract(!wantsContract)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  wantsContract ? 'bg-amber-500' : 'bg-slate-800'
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none items-center ${
+                  wantsContract ? 'bg-[#C8A96A]' : 'bg-[#2A3340]'
                 }`}
+                aria-label="Activer ou désactiver le contrat"
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                    wantsContract ? 'translate-x-5' : 'translate-x-0'
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full transition duration-200 ease-in-out ${
+                    wantsContract ? 'translate-x-5 bg-[#151A22]' : 'translate-x-0.5 bg-[#98A2B0]'
                   }`}
                 />
               </button>
@@ -444,14 +445,15 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           )}
 
           {/* Person details */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+          {/* Person details */}
+          <div className="space-y-3 p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-medium text-[#98A2B0] flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#98A2B0]" />
                 <span>
                   {type === 'on_me_doit' ? "Nom complet de l'emprunteur" : 'Nom complet du prêteur'}
                 </span>
-                <span className="text-rose-400">*</span>
+                <span className="text-[#E5604D]">*</span>
               </label>
               <input
                 type="text"
@@ -459,13 +461,13 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 placeholder="Ex: Patrick MUKENDI"
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                className="w-full min-h-[44px] px-3 py-2.5 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-medium text-[#98A2B0] flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-[#98A2B0]" />
                 <span>Téléphone (format international)</span>
               </label>
               <input
@@ -473,52 +475,52 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 placeholder="+243810000000"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono"
+                className="w-full min-h-[44px] px-3 py-2.5 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A] tabular-nums"
               />
             </div>
 
             {/* Address of the other party */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-medium text-[#98A2B0] flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#98A2B0]" />
                 <span>
                   {type === 'on_me_doit' ? "Adresse de l'emprunteur" : 'Adresse du prêteur'}
                 </span>
-                {wantsContract && <span className="text-rose-400">*</span>}
+                {wantsContract && <span className="text-[#E5604D]">*</span>}
               </label>
               <input
                 type="text"
                 placeholder="Ex: N° 12, Av. Kasavubu, C/ Bandalungwa, Kinshasa"
                 value={otherPartyAddress}
                 onChange={(e) => setOtherPartyAddress(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                className="w-full min-h-[44px] px-3 py-2.5 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A]"
               />
             </div>
           </div>
 
           {/* Amount and Currency */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+          <div className="space-y-3 p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-                <span>Montant et Devise</span>
-                <span className="text-rose-400">*</span>
+              <label className="text-xs font-medium text-[#98A2B0] flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-[#98A2B0]" />
+                <span>Montant et devise</span>
+                <span className="text-[#E5604D]">*</span>
               </label>
-              <div className="flex gap-1 p-0.5 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="flex gap-1 p-0.5 rounded-[6px] bg-[#1C232D] border border-[#2A3340]">
                 <button
                   type="button"
                   onClick={() => setCurrency('USD')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    currency === 'USD' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                  className={`min-h-[32px] px-3 py-1 rounded-[4px] text-xs font-semibold transition cursor-pointer ${
+                    currency === 'USD' ? 'bg-[#C8A96A] text-[#151A22]' : 'text-[#98A2B0] hover:text-[#ECE9E2]'
                   }`}
                 >
-                  USD ($)
+                  USD
                 </button>
                 <button
                   type="button"
                   onClick={() => setCurrency('FC')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    currency === 'FC' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                  className={`min-h-[32px] px-3 py-1 rounded-[4px] text-xs font-semibold transition cursor-pointer ${
+                    currency === 'FC' ? 'bg-[#C8A96A] text-[#151A22]' : 'text-[#98A2B0] hover:text-[#ECE9E2]'
                   }`}
                 >
                   FC
@@ -535,16 +537,16 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 placeholder="0.00"
                 value={initialAmount}
                 onChange={(e) => setInitialAmount(e.target.value)}
-                className="w-full pl-3 pr-14 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 font-semibold text-sm"
+                className="w-full min-h-[44px] pl-3 pr-16 py-2.5 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A] font-semibold text-base tabular-nums"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-xs text-amber-400">
-                {currency === 'USD' ? '$ USD' : 'FC'}
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 font-semibold text-xs text-[#98A2B0]">
+                {currency}
               </span>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-medium text-[#98A2B0] flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#98A2B0]" />
                 <span>Motif / Note</span>
               </label>
               <textarea
@@ -552,65 +554,65 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 placeholder="Ex: Prêt personnel pour achat matériel"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 resize-none"
+                className="w-full px-3 py-2 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A] resize-none"
               />
             </div>
           </div>
 
           {/* Dates & Repayment Mode */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+          <div className="space-y-3 p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-medium text-[#98A2B0] flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#98A2B0]" />
                 <span>Date de remise des fonds</span>
-                <span className="text-rose-400">*</span>
+                <span className="text-[#E5604D]">*</span>
               </label>
               <input
                 type="date"
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500"
+                className="w-full min-h-[44px] px-3 py-2 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] text-sm focus:outline-none focus:border-[#C8A96A]"
               />
             </div>
 
             {/* Échéance ou non */}
             <div className="pt-1 space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-200">
+                <label className="text-sm font-medium text-[#ECE9E2]">
                   Fixer une date d'échéance
                 </label>
                 <input
                   type="checkbox"
                   checked={hasDueDate}
                   onChange={(e) => setHasDueDate(e.target.checked)}
-                  className="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 cursor-pointer"
+                  className="w-5 h-5 rounded-[4px] text-[#C8A96A] bg-[#1C232D] border-[#2A3340] cursor-pointer"
                 />
               </div>
 
               {hasDueDate ? (
-                <div className="space-y-1.5 pl-2 border-l-2 border-amber-500/30">
-                  <span className="text-[11px] text-slate-400">Date d'échéance</span>
+                <div className="space-y-1.5 pl-2 border-l-2 border-[#2A3340]">
+                  <span className="text-xs text-[#98A2B0]">Date d'échéance</span>
                   <input
                     type="date"
                     required={hasDueDate}
                     min={startDate}
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full min-h-[44px] px-3 py-2 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] text-sm focus:outline-none focus:border-[#C8A96A]"
                   />
                 </div>
               ) : (
-                <div className="space-y-1.5 pl-2 border-l-2 border-slate-700 text-[11px] text-slate-400">
+                <div className="space-y-1.5 pl-2 border-l-2 border-[#2A3340] text-xs text-[#98A2B0]">
                   <span>Remboursable sur demande avec un préavis de :</span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-1">
                     <input
                       type="number"
                       min="1"
                       max="90"
                       value={noticeDays}
                       onChange={(e) => setNoticeDays(Number(e.target.value))}
-                      className="w-20 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 text-center"
+                      className="w-20 min-h-[36px] px-2 py-1.5 rounded-[6px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] text-center text-sm tabular-nums"
                     />
                     <span>jours (7 jours par défaut)</span>
                   </div>
@@ -620,29 +622,30 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           </div>
 
           {/* CONTRACT CLAUSES (Displayed when wantsContract is enabled) */}
+          {/* CONTRACT CLAUSES (Displayed when wantsContract is enabled) */}
           {wantsContract && (
-            <div className="space-y-3.5 p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+            <div className="space-y-3.5 p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                  <FileSignature className="w-4 h-4" />
-                  Clauses du Contrat ({type === 'on_me_doit' ? 'Prêt accordé' : 'Dette je dois'})
+                <span className="text-sm font-semibold text-[#ECE9E2] flex items-center gap-1.5">
+                  <FileSignature className="w-4 h-4 text-[#C8A96A]" />
+                  Clauses du contrat
                 </span>
-                <span className="text-[10px] text-slate-400">Sous seing privé</span>
+                <span className="text-xs text-[#98A2B0]">Sous seing privé</span>
               </div>
 
               {/* Mode de remise (plusieurs possibles) */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300 block">
+                <label className="text-xs font-medium text-[#98A2B0] block">
                   Mode de remise des fonds (plusieurs possibles)
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
                     onClick={() => toggleDeliveryMethod('especes')}
-                    className={`py-2 px-1 rounded-xl text-[11px] font-medium border text-center transition cursor-pointer ${
+                    className={`min-h-[40px] py-2 px-1 rounded-[6px] text-xs font-medium border text-center transition cursor-pointer ${
                       deliveryMethods.includes('especes')
-                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-bold'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                        ? 'bg-[#1C232D] border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                        : 'bg-[#151A22] border-[#2A3340] text-[#98A2B0] hover:text-[#ECE9E2]'
                     }`}
                   >
                     Espèces
@@ -650,21 +653,21 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                   <button
                     type="button"
                     onClick={() => toggleDeliveryMethod('mobile_money')}
-                    className={`py-2 px-1 rounded-xl text-[11px] font-medium border text-center transition cursor-pointer ${
+                    className={`min-h-[40px] py-2 px-1 rounded-[6px] text-xs font-medium border text-center transition cursor-pointer ${
                       deliveryMethods.includes('mobile_money')
-                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-bold'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                        ? 'bg-[#1C232D] border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                        : 'bg-[#151A22] border-[#2A3340] text-[#98A2B0] hover:text-[#ECE9E2]'
                     }`}
                   >
-                    Mobile Money
+                    Mobile money
                   </button>
                   <button
                     type="button"
                     onClick={() => toggleDeliveryMethod('virement_bancaire')}
-                    className={`py-2 px-1 rounded-xl text-[11px] font-medium border text-center transition cursor-pointer ${
+                    className={`min-h-[40px] py-2 px-1 rounded-[6px] text-xs font-medium border text-center transition cursor-pointer ${
                       deliveryMethods.includes('virement_bancaire')
-                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-bold'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                        ? 'bg-[#1C232D] border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                        : 'bg-[#151A22] border-[#2A3340] text-[#98A2B0] hover:text-[#ECE9E2]'
                     }`}
                   >
                     Virement
@@ -674,21 +677,21 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
 
               {/* Pénalité de retard (uniquement si échéance) */}
               {hasDueDate && (
-                <div className="space-y-2 pt-1 border-t border-slate-800/80">
+                <div className="space-y-2 pt-2 border-t border-[#2A3340]">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-semibold text-slate-300">
+                    <label className="text-xs font-medium text-[#ECE9E2]">
                       Pénalité de retard en cas de non-remboursement
                     </label>
                     <input
                       type="checkbox"
                       checked={latePenaltyEnabled}
                       onChange={(e) => setLatePenaltyEnabled(e.target.checked)}
-                      className="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 cursor-pointer"
+                      className="w-5 h-5 rounded-[4px] text-[#C8A96A] bg-[#1C232D] border-[#2A3340] cursor-pointer"
                     />
                   </div>
 
                   {latePenaltyEnabled && (
-                    <div className="flex items-center gap-2 pl-2 border-l-2 border-amber-500/30 text-xs">
+                    <div className="flex items-center gap-2 pl-2 border-l-2 border-[#2A3340] text-xs text-[#98A2B0]">
                       <span>Taux :</span>
                       <input
                         type="number"
@@ -696,13 +699,13 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                         min="0.1"
                         value={latePenaltyRate}
                         onChange={(e) => setLatePenaltyRate(e.target.value)}
-                        className="w-16 px-2 py-1 rounded bg-slate-950 border border-slate-800 text-slate-100 text-center"
+                        className="w-16 min-h-[36px] px-2 py-1 rounded-[6px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] text-center text-sm tabular-nums"
                       />
                       <span>% par</span>
                       <select
                         value={latePenaltyPeriod}
                         onChange={(e) => setLatePenaltyPeriod(e.target.value as any)}
-                        className="px-2 py-1 rounded bg-slate-950 border border-slate-800 text-slate-100"
+                        className="min-h-[36px] px-2 py-1 rounded-[6px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] text-xs"
                       >
                         <option value="jour">jour</option>
                         <option value="semaine">semaine</option>
@@ -714,56 +717,56 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
               )}
 
               {/* Témoin ou non */}
-              <div className="space-y-2 pt-1 border-t border-slate-800/80">
+              <div className="space-y-2 pt-2 border-t border-[#2A3340]">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-slate-300">
+                  <label className="text-xs font-medium text-[#ECE9E2]">
                     Présence d'un témoin à la signature
                   </label>
                   <input
                     type="checkbox"
                     checked={witnessEnabled}
                     onChange={(e) => setWitnessEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 cursor-pointer"
+                    className="w-5 h-5 rounded-[4px] text-[#C8A96A] bg-[#1C232D] border-[#2A3340] cursor-pointer"
                   />
                 </div>
 
                 {witnessEnabled && (
-                  <div className="pl-2 border-l-2 border-amber-500/30">
+                  <div className="pl-2 border-l-2 border-[#2A3340]">
                     <input
                       type="text"
                       placeholder="Nom complet du témoin"
                       value={witnessFullName}
                       onChange={(e) => setWitnessFullName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none"
+                      className="w-full min-h-[44px] px-3 py-2 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A]"
                     />
                   </div>
                 )}
               </div>
 
               {/* Pièce d'identité (désactivée par défaut) */}
-              <div className="space-y-2 pt-1 border-t border-slate-800/80">
+              <div className="space-y-2 pt-2 border-t border-[#2A3340]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block">
+                    <label className="text-xs font-medium text-[#ECE9E2] block">
                       Pièce d'identité de l'autre partie
                     </label>
-                    <span className="text-[10px] text-slate-500">Option désactivée par défaut</span>
+                    <span className="text-xs text-[#98A2B0]">Option désactivée par défaut</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={borrowerIdEnabled}
                     onChange={(e) => setBorrowerIdEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 cursor-pointer"
+                    className="w-5 h-5 rounded-[4px] text-[#C8A96A] bg-[#1C232D] border-[#2A3340] cursor-pointer"
                   />
                 </div>
 
                 {borrowerIdEnabled && (
-                  <div className="space-y-2 pl-2 border-l-2 border-amber-500/30">
+                  <div className="space-y-2 pl-2 border-l-2 border-[#2A3340]">
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={borrowerIdType}
                         onChange={(e) => setBorrowerIdType(e.target.value as any)}
-                        className="px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200"
+                        className="min-h-[44px] px-2.5 py-2 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] text-xs"
                       >
                         <option value="carte_electeur">Carte d'électeur</option>
                         <option value="passeport">Passeport</option>
@@ -775,7 +778,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                         placeholder="Numéro de la pièce"
                         value={borrowerIdNumber}
                         onChange={(e) => setBorrowerIdNumber(e.target.value)}
-                        className="px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none"
+                        className="min-h-[44px] px-2.5 py-2 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A]"
                       />
                     </div>
                   </div>
@@ -785,9 +788,9 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           )}
 
           {/* Intérêts */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-            <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-              <Percent className="w-3.5 h-3.5 text-slate-400" />
+          <div className="space-y-3 p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340]">
+            <label className="text-xs font-medium text-[#98A2B0] flex items-center gap-1.5">
+              <Percent className="w-3.5 h-3.5 text-[#98A2B0]" />
               <span>Modalités d'intérêts</span>
             </label>
 
@@ -795,41 +798,41 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
               <button
                 type="button"
                 onClick={() => setInterestType('none')}
-                className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
+                className={`min-h-[44px] py-2 px-2.5 rounded-[8px] border text-center transition cursor-pointer text-xs ${
                   interestType === 'none'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-[#1C232D] border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                    : 'bg-[#151A22] border-[#2A3340] text-[#98A2B0] hover:text-[#ECE9E2]'
                 }`}
               >
-                (1) Aucun
+                Aucun intérêt
               </button>
               <button
                 type="button"
                 onClick={() => setInterestType('percentage_once')}
-                className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
+                className={`min-h-[44px] py-2 px-2.5 rounded-[8px] border text-center transition cursor-pointer text-xs ${
                   interestType === 'percentage_once'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-[#1C232D] border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                    : 'bg-[#151A22] border-[#2A3340] text-[#98A2B0] hover:text-[#ECE9E2]'
                 }`}
               >
-                (2) % unique
+                Pourcentage unique
               </button>
               <button
                 type="button"
                 onClick={() => setInterestType('percentage_monthly')}
-                className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
+                className={`min-h-[44px] py-2 px-2.5 rounded-[8px] border text-center transition cursor-pointer text-xs ${
                   interestType === 'percentage_monthly'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-[#1C232D] border-[#C8A96A] text-[#ECE9E2] font-semibold'
+                    : 'bg-[#151A22] border-[#2A3340] text-[#98A2B0] hover:text-[#ECE9E2]'
                 }`}
               >
-                (3) % mensuel simple
+                Pourcentage mensuel
               </button>
             </div>
 
             {(interestType === 'percentage_once' || interestType === 'percentage_monthly') && (
-              <div className="space-y-1 pl-2 border-l-2 border-amber-500">
-                <span className="text-[11px] text-slate-400">Taux en pourcentage (%) :</span>
+              <div className="space-y-1.5 pl-2 border-l-2 border-[#2A3340]">
+                <span className="text-xs text-[#98A2B0]">Taux en pourcentage (%) :</span>
                 <input
                   type="number"
                   step="any"
@@ -837,38 +840,38 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                   placeholder="Ex: 10 pour 10%"
                   value={interestRate}
                   onChange={(e) => setInterestRate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A] tabular-nums"
                 />
               </div>
             )}
 
             {/* Calculations preview */}
-            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1">
-              <div className="flex justify-between text-slate-400">
+            <div className="p-3 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-xs space-y-1.5">
+              <div className="flex justify-between text-[#98A2B0]">
                 <span>Capital :</span>
-                <span className="font-medium text-slate-200">{formatCurrencyValue(parsedCapital, currency)}</span>
+                <span className="font-medium text-[#ECE9E2] tabular-nums">{formatCurrencyValue(parsedCapital, currency)}</span>
               </div>
-              <div className="flex justify-between text-slate-400">
+              <div className="flex justify-between text-[#98A2B0]">
                 <span>Intérêts ({previewInterest.formulaDescription}) :</span>
-                <span className="font-medium text-amber-400">
+                <span className="font-medium text-[#C8A96A] tabular-nums">
                   +{formatCurrencyValue(previewInterest.interestAmount, currency)}
                 </span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-slate-800 font-bold text-white">
+              <div className="flex justify-between pt-1.5 border-t border-[#2A3340] font-semibold text-[#ECE9E2] text-sm">
                 <span>Total dû prévu :</span>
-                <span className="text-emerald-400">{formatCurrencyValue(previewTotal, currency)}</span>
+                <span className="text-[#5FB48C] tabular-nums">{formatCurrencyValue(previewTotal, currency)}</span>
               </div>
             </div>
           </div>
 
           {/* Proof Photo Upload */}
-          <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2">
+          <div className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340] space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Camera className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-medium text-[#ECE9E2] flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-[#98A2B0]" />
                 Photo de preuve (reçu, contrat physique)
               </label>
-              <span className="text-[10px] text-slate-500">Compressée ~800px</span>
+              <span className="text-xs text-[#98A2B0]">Compressée ~800px</span>
             </div>
 
             <input
@@ -881,13 +884,14 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             />
 
             {proofPhoto ? (
-              <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 flex items-center justify-center max-h-48 group">
+              <div className="relative rounded-[8px] overflow-hidden border border-[#2A3340] bg-[#151A22] flex items-center justify-center max-h-48 group">
                 <img src={proofPhoto} alt="Preuve" className="max-h-48 w-full object-contain" />
                 <button
                   type="button"
                   onClick={() => setProofPhoto(null)}
-                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white shadow-md transition cursor-pointer"
+                  className="absolute top-2 right-2 w-11 h-11 rounded-[8px] bg-[#E5604D] hover:bg-rose-600 text-white flex items-center justify-center transition cursor-pointer"
                   title="Supprimer la photo"
+                  aria-label="Supprimer photo"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -897,9 +901,9 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 type="button"
                 disabled={isCompressing}
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-3 px-4 rounded-xl border border-dashed border-slate-700 hover:border-slate-500 bg-slate-900/50 hover:bg-slate-900 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200 transition cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[48px] py-3 px-4 rounded-[8px] border border-dashed border-[#2A3340] hover:border-[#98A2B0] bg-[#1C232D] flex flex-col items-center justify-center gap-1.5 text-[#98A2B0] hover:text-[#ECE9E2] transition cursor-pointer disabled:opacity-50"
               >
-                <Camera className="w-5 h-5 text-slate-500" />
+                <Camera className="w-5 h-5 text-[#98A2B0]" />
                 <span className="text-xs font-medium">
                   {isCompressing ? 'Compression (~800px)...' : 'Prendre une photo ou importer un reçu'}
                 </span>
@@ -909,11 +913,11 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
         </form>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-slate-800 flex items-center gap-2">
+        <div className="pt-3 border-t border-[#2A3340] flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition cursor-pointer"
+            className="min-h-[44px] py-2.5 px-4 rounded-[8px] bg-[#151A22] hover:bg-[#252F3D] text-sm font-medium text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340] transition cursor-pointer"
           >
             Annuler
           </button>
@@ -925,21 +929,21 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
               type="button"
               onClick={handleFormSubmit}
               disabled={isSubmitting || isCompressing}
-              className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
+              className="flex-1 min-h-[44px] py-2.5 px-4 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] active:bg-[#b29454] text-[#151A22] text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
             >
               <FileSignature className="w-4 h-4" />
               <span>Lire et faire signer</span>
             </button>
           ) : (
-            /* Désactivé : « Enregistrer » */
+            /* Désactivé : « Enregistrer la dette » */
             <button
               type="button"
               onClick={handleFormSubmit}
               disabled={isSubmitting || isCompressing}
-              className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950 transition cursor-pointer disabled:opacity-50"
+              className="flex-1 min-h-[44px] py-2.5 px-4 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] active:bg-[#b29454] text-[#151A22] text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
-              <span>{isEditing ? 'Mettre à jour' : 'Enregistrer'}</span>
+              <span>{isEditing ? 'Mettre à jour la dette' : 'Enregistrer la dette'}</span>
             </button>
           )}
         </div>

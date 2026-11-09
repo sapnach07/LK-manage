@@ -1,1 +1,61 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-app: #151A22;
+    --bg-surface: #1C232D;
+    --border-app: #2A3340;
+    --text-primary: #ECE9E2;
+    --text-muted: #98A2B0;
+    --accent-brass: #C8A96A;
+    --color-overdue: #E5604D;
+    --color-settled: #5FB48C;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #151A22;
+    color: #ECE9E2;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Fixed scale without decorative shadows or gradients */
+  * {
+    box-shadow: none !important;
+  }
+
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+}
+
+/* Tabular figures for all financial amounts and numeric counters */
+.tabular-nums, .num-amount {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Scrollbar styling for ledger */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #151A22;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A3340;
+  border-radius: 4px;
+}

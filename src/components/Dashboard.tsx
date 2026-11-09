@@ -1,115 +1,162 @@
-import React from 'react';
-import { ArrowDownLeft, ArrowUpRight, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { DashboardTotals } from '../types/debt';
-import { formatCurrencyValue } from '../utils/debtCalculations';
+import React, { useMemo } from 'react';
+import { DashboardTotals, Debt } from '../types/debt';
+import { formatCurrencyValue, getDebtSummary } from '../utils/debtCalculations';
 
 interface DashboardProps {
   totals: DashboardTotals;
   activeFilter: string;
   onSelectFilter: (filter: 'all' | 'je_dois' | 'on_me_doit' | 'overdue' | 'settled') => void;
+  debts?: Debt[];
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ totals, activeFilter, onSelectFilter }) => {
+export const Dashboard: React.FC<DashboardProps> = ({
+  totals,
+  activeFilter,
+  onSelectFilter,
+  debts = [],
+}) => {
+  // Calculate "À encaisser cette semaine" (receivables due within next 7 days, not settled)
+  const dueThisWeek = useMemo(() => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+    let count = 0;
+    let sumUSD = 0;
+    let sumFC = 0;
+
+    for (const d of debts) {
+      if (d.type === 'on_me_doit' && d.dueDate && d.dueDate >= todayStr && d.dueDate <= nextWeekStr) {
+        const s = getDebtSummary(d);
+        if (!s.isSettled) {
+          count++;
+          if (d.currency === 'USD') sumUSD += s.remainingBalance;
+          else sumFC += s.remainingBalance;
+        }
+      }
+    }
+
+    return { count, sumUSD: Math.round(sumUSD * 100) / 100, sumFC: Math.round(sumFC * 100) / 100 };
+  }, [debts]);
+
   return (
-    <div className="space-y-3">
-      {/* Primary Financial Overview Cards (FC & USD Strictly Separated) */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* On me doit (Receivables) */}
+    <div className="space-y-2">
+      {/* 1. Totaux FC et USD strictement séparés : Registre des créances et dettes */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* On me doit (À recevoir) */}
         <button
           type="button"
           onClick={() => onSelectFilter(activeFilter === 'on_me_doit' ? 'all' : 'on_me_doit')}
-          className={`relative p-3.5 rounded-2xl text-left transition-all border cursor-pointer ${
+          className={`p-3.5 rounded-[8px] text-left transition-colors border cursor-pointer ${
             activeFilter === 'on_me_doit'
-              ? 'bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-950/50 ring-1 ring-emerald-500/30'
-              : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+              ? 'bg-[#1C232D] border-[#C8A96A]'
+              : 'bg-[#1C232D] border-[#2A3340] hover:border-[#98A2B0]'
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-emerald-400/90 flex items-center gap-1">
-              <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-sm font-medium text-[#5FB48C] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#5FB48C]" />
               On me doit
             </span>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[11px] font-medium text-slate-400">USD :</span>
-              <span className="text-base font-bold tracking-tight text-white">
+          <div className="space-y-1.5">
+            <div className="flex items-baseline justify-between text-xs text-[#98A2B0]">
+              <span>USD</span>
+              <span className="text-base font-semibold text-[#ECE9E2] tabular-nums">
                 {formatCurrencyValue(totals.onMeDoit.USD, 'USD')}
               </span>
             </div>
-            <div className="flex items-baseline justify-between pt-1 border-t border-slate-800/80">
-              <span className="text-[11px] font-medium text-slate-400">FC :</span>
-              <span className="text-sm font-semibold tracking-tight text-slate-200">
+            <div className="flex items-baseline justify-between text-xs text-[#98A2B0] pt-1.5 border-t border-[#2A3340]">
+              <span>FC</span>
+              <span className="text-sm font-semibold text-[#ECE9E2] tabular-nums">
                 {formatCurrencyValue(totals.onMeDoit.FC, 'FC')}
               </span>
             </div>
           </div>
-          <div className="mt-2 text-[10px] text-emerald-400/70">À percevoir</div>
         </button>
 
-        {/* Je dois (Debts) */}
+        {/* Je dois (À rembourser) */}
         <button
           type="button"
           onClick={() => onSelectFilter(activeFilter === 'je_dois' ? 'all' : 'je_dois')}
-          className={`relative p-3.5 rounded-2xl text-left transition-all border cursor-pointer ${
+          className={`p-3.5 rounded-[8px] text-left transition-colors border cursor-pointer ${
             activeFilter === 'je_dois'
-              ? 'bg-amber-950/40 border-amber-500/50 shadow-lg shadow-amber-950/50 ring-1 ring-amber-500/30'
-              : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+              ? 'bg-[#1C232D] border-[#C8A96A]'
+              : 'bg-[#1C232D] border-[#2A3340] hover:border-[#98A2B0]'
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-amber-400/90 flex items-center gap-1">
-              <ArrowUpRight className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-sm font-medium text-[#98A2B0] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#98A2B0]" />
               Je dois
             </span>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[11px] font-medium text-slate-400">USD :</span>
-              <span className="text-base font-bold tracking-tight text-white">
+          <div className="space-y-1.5">
+            <div className="flex items-baseline justify-between text-xs text-[#98A2B0]">
+              <span>USD</span>
+              <span className="text-base font-semibold text-[#ECE9E2] tabular-nums">
                 {formatCurrencyValue(totals.jeDois.USD, 'USD')}
               </span>
             </div>
-            <div className="flex items-baseline justify-between pt-1 border-t border-slate-800/80">
-              <span className="text-[11px] font-medium text-slate-400">FC :</span>
-              <span className="text-sm font-semibold tracking-tight text-slate-200">
+            <div className="flex items-baseline justify-between text-xs text-[#98A2B0] pt-1.5 border-t border-[#2A3340]">
+              <span>FC</span>
+              <span className="text-sm font-semibold text-[#ECE9E2] tabular-nums">
                 {formatCurrencyValue(totals.jeDois.FC, 'FC')}
               </span>
             </div>
           </div>
-          <div className="mt-2 text-[10px] text-amber-400/70">À rembourser</div>
         </button>
       </div>
 
-      {/* Overdue alert banner & quick statistics */}
-      {totals.overdueCount > 0 && (
+      {/* 2. « À encaisser cette semaine » et « En retard » en rangées sobres sans chiffre décoratif */}
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        {/* À encaisser cette semaine */}
+        <div className="p-3 rounded-[8px] bg-[#1C232D] border border-[#2A3340] flex flex-col justify-between min-h-[64px]">
+          <div className="flex items-center gap-1.5 text-[#98A2B0] font-medium">
+            <span className="w-2 h-2 rounded-full bg-[#5FB48C]" />
+            <span>À encaisser cette semaine</span>
+          </div>
+          <div className="mt-1 text-sm font-semibold text-[#ECE9E2] tabular-nums">
+            {dueThisWeek.count > 0 ? (
+              <span className="space-x-1">
+                {dueThisWeek.sumUSD > 0 && <span>{formatCurrencyValue(dueThisWeek.sumUSD, 'USD')}</span>}
+                {dueThisWeek.sumUSD > 0 && dueThisWeek.sumFC > 0 && <span className="text-[#98A2B0]">·</span>}
+                {dueThisWeek.sumFC > 0 && <span>{formatCurrencyValue(dueThisWeek.sumFC, 'FC')}</span>}
+                <span className="text-xs text-[#98A2B0] font-normal">({dueThisWeek.count})</span>
+              </span>
+            ) : (
+              <span className="text-xs text-[#98A2B0] font-normal">Aucune échéance</span>
+            )}
+          </div>
+        </div>
+
+        {/* En retard */}
         <button
           type="button"
-          onClick={() => onSelectFilter('overdue')}
-          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+          onClick={() => onSelectFilter(activeFilter === 'overdue' ? 'all' : 'overdue')}
+          className={`p-3 rounded-[8px] text-left transition-colors border cursor-pointer flex flex-col justify-between min-h-[64px] ${
             activeFilter === 'overdue'
-              ? 'bg-rose-950/60 border-rose-500 text-rose-200 ring-1 ring-rose-500/40'
-              : 'bg-rose-950/30 border-rose-900/60 text-rose-300 hover:bg-rose-950/40'
+              ? 'bg-[#1C232D] border-[#E5604D]'
+              : 'bg-[#1C232D] border-[#2A3340] hover:border-[#E5604D]'
           }`}
         >
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded-full bg-rose-500/20 text-rose-400">
-              <AlertCircle className="w-4 h-4 animate-pulse" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-rose-400">
-                {totals.overdueCount} dette{totals.overdueCount > 1 ? 's' : ''} en retard
-              </span>
-              <p className="text-[11px] text-rose-300/80">Date d'échéance dépassée non soldée</p>
-            </div>
+          <div className="flex items-center gap-1.5 text-[#E5604D] font-medium">
+            <span className="w-2 h-2 rounded-full bg-[#E5604D]" />
+            <span>En retard</span>
           </div>
-          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-rose-900/50 border border-rose-700/50 text-rose-200">
-            Filtrer
-          </span>
+          <div className="mt-1 text-sm font-semibold text-[#E5604D] tabular-nums">
+            {totals.overdueCount > 0 ? (
+              <span>{totals.overdueCount} dette{totals.overdueCount > 1 ? 's' : ''} à relancer</span>
+            ) : (
+              <span className="text-xs text-[#98A2B0] font-normal">Aucun retard</span>
+            )}
+          </div>
         </button>
-      )}
+      </div>
     </div>
   );
 };

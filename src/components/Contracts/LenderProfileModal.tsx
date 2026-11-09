@@ -73,23 +73,23 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-xs p-0 sm:p-4">
-      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-xs p-0 sm:p-4">
+      <div className="w-full max-w-lg rounded-t-[16px] sm:rounded-[16px] bg-[#1C232D] border border-[#2A3340] p-4 sm:p-5 text-[#ECE9E2] max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-[#2A3340]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#C8A96A] flex items-center justify-center">
               <UserCheck className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Profil du Prêteur</h2>
-              <p className="text-xs text-slate-400">Identité & Signature pour vos contrats</p>
+              <h2 className="text-base font-semibold text-[#ECE9E2]">Profil du prêteur</h2>
+              <p className="text-xs text-[#98A2B0]">Identité et signature pour vos contrats</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="min-h-[44px] min-w-[44px] rounded-[8px] text-[#98A2B0] hover:text-[#ECE9E2] hover:bg-[#151A22] transition flex items-center justify-center cursor-pointer"
             aria-label="Fermer"
           >
             <X className="w-5 h-5" />
@@ -99,58 +99,58 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="overflow-y-auto py-4 space-y-4 flex-1 text-xs pr-1">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#E5604D] text-[#E5604D] font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#E5604D]" />
               <span>{error}</span>
             </div>
           )}
 
           {savedSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-medium flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-              <span>Profil et signature enregistrés avec succès !</span>
+            <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#5FB48C] text-[#5FB48C] font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#5FB48C]" />
+              <span>Profil et signature enregistrés avec succès.</span>
             </div>
           )}
 
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-[11px] flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#98A2B0] text-xs flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#5FB48C] shrink-0 mt-0.5" />
             <span>
-              Vos coordonnées et votre signature dessinée restent strictement confidentielles sur votre appareil (100% hors ligne). Elles sont réutilisées automatiquement pour signer les contrats de prêt.
+              Vos coordonnées et signature restent strictement confidentielles sur cet appareil (100% hors ligne). Elles sont réutilisées automatiquement pour signer les contrats.
             </span>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
-              Nom complet du prêteur <span className="text-rose-400">*</span>
+            <label className="text-xs font-semibold text-[#ECE9E2]">
+              Nom complet du prêteur <span className="text-[#E5604D]">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder="Ex: Jean-Luc KABILA"
+              placeholder="Ex : Jean-Luc KABILA"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+              className="w-full min-h-[44px] px-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A] text-sm"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Téléphone <span className="text-rose-400">*</span>
+              <label className="text-xs font-semibold text-[#ECE9E2]">
+                Téléphone <span className="text-[#E5604D]">*</span>
               </label>
               <input
                 type="tel"
                 required
-                placeholder="+243810000000"
+                placeholder="+243..."
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                className="w-full min-h-[44px] px-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A] text-sm"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Ville de résidence <span className="text-rose-400">*</span>
+              <label className="text-xs font-semibold text-[#ECE9E2]">
+                Ville de résidence <span className="text-[#E5604D]">*</span>
               </label>
               <input
                 type="text"
@@ -158,28 +158,28 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
                 placeholder="Kinshasa"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                className="w-full min-h-[44px] px-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A] text-sm"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
-              Adresse complète <span className="text-rose-400">*</span>
+            <label className="text-xs font-semibold text-[#ECE9E2]">
+              Adresse complète <span className="text-[#E5604D]">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder="Ex: N° 45, Av. de la Paix, C/ Gombe"
+              placeholder="Ex : N° 45, Av. de la Paix, C/ Gombe"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+              className="w-full min-h-[44px] px-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A] text-sm"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
+              <label className="text-xs font-semibold text-[#ECE9E2]">
                 Préavis de remboursement par défaut
               </label>
               <div className="flex items-center gap-2">
@@ -189,14 +189,14 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
                   max="90"
                   value={defaultNoticeDays}
                   onChange={(e) => setDefaultNoticeDays(Number(e.target.value))}
-                  className="w-24 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-24 min-h-[44px] px-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#ECE9E2] focus:outline-none focus:border-[#C8A96A] text-sm tabular-nums"
                 />
-                <span className="text-xs text-slate-400">jours (7 jours par défaut)</span>
+                <span className="text-xs text-[#98A2B0]">jours (7 par défaut)</span>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
+              <label className="text-xs font-semibold text-[#ECE9E2]">
                 Juridiction compétente par défaut
               </label>
               <input
@@ -204,13 +204,13 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
                 value={defaultJurisdiction}
                 onChange={(e) => setDefaultJurisdiction(e.target.value)}
                 placeholder="Kinshasa"
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500"
+                className="w-full min-h-[44px] px-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#ECE9E2] focus:outline-none focus:border-[#C8A96A] text-sm"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-[#ECE9E2]">
               Délai minimal de lecture avant signature
             </label>
             <div className="flex items-center gap-2">
@@ -220,19 +220,19 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
                 max="300"
                 value={minReadingTimeSeconds}
                 onChange={(e) => setMinReadingTimeSeconds(Math.max(0, Number(e.target.value)))}
-                className="w-24 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-500"
+                className="w-24 min-h-[44px] px-3 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#ECE9E2] focus:outline-none focus:border-[#C8A96A] text-sm tabular-nums"
               />
-              <span className="text-xs text-slate-400">secondes (20 s par défaut, 0 pour désactiver)</span>
+              <span className="text-xs text-[#98A2B0]">secondes (20 s par défaut, 0 pour désactiver)</span>
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-            <div>
-              <label htmlFor="short-legal-clauses" className="text-xs font-semibold text-slate-200 block cursor-pointer">
+          <div className="p-3.5 rounded-[8px] bg-[#151A22] border border-[#2A3340] flex items-center justify-between">
+            <div className="pr-2">
+              <label htmlFor="short-legal-clauses" className="text-xs font-semibold text-[#ECE9E2] block cursor-pointer">
                 Clauses juridiques courtes
               </label>
-              <span className="text-[11px] text-slate-400">
-                Ajoute mention Code du numérique et compétence du tribunal au contrat court (désactivé par défaut)
+              <span className="text-xs text-[#98A2B0]">
+                Mention du Code du numérique et compétence du tribunal (désactivé par défaut)
               </span>
             </div>
             <input
@@ -240,7 +240,7 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
               id="short-legal-clauses"
               checked={shortLegalClausesEnabled}
               onChange={(e) => setShortLegalClausesEnabled(e.target.checked)}
-              className="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-700 cursor-pointer"
+              className="w-4 h-4 rounded text-[#C8A96A] bg-[#1C232D] border-[#2A3340] focus:ring-[#C8A96A] cursor-pointer"
             />
           </div>
 
@@ -258,9 +258,9 @@ export const LenderProfileModal: React.FC<LenderProfileModalProps> = ({
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition cursor-pointer shadow-lg shadow-amber-500/20"
+              className="w-full min-h-[44px] rounded-[8px] bg-[#C8A96A] hover:bg-[#d6b777] text-[#151A22] font-semibold text-sm transition cursor-pointer"
             >
-              Enregistrer mon profil de prêteur
+              Enregistrer le profil du prêteur
             </button>
           </div>
         </form>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { List, Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { Debt } from '../../types/debt';
-import { PlanningTask, NotificationLeadTime } from '../../types/planning';
+import { PlanningTask } from '../../types/planning';
 import { buildUnifiedPlanningItems } from '../../utils/planningCalculations';
 import { NotificationBanner } from './NotificationBanner';
 import { PlanningListView } from './PlanningListView';
@@ -28,7 +28,6 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
   const [activeView, setActiveView] = useState<'list' | 'calendar'>('list');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  // Compute unified items combining active debts & custom tasks
   const unifiedItems = buildUnifiedPlanningItems(debts, tasks);
 
   return (
@@ -38,29 +37,29 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
 
       {/* 2. Sub-Header: View Mode Switcher & Add Task Action */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+        <div className="flex items-center p-1 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-xs">
           <button
             type="button"
             onClick={() => setActiveView('list')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+            className={`min-h-[44px] flex items-center gap-1.5 px-3.5 rounded-[8px] font-medium transition cursor-pointer ${
               activeView === 'list'
-                ? 'bg-slate-800 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#C8A96A] text-[#151A22] font-semibold'
+                : 'text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
-            <List className="w-3.5 h-3.5" />
+            <List className="w-4 h-4" />
             <span>Liste</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveView('calendar')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+            className={`min-h-[44px] flex items-center gap-1.5 px-3.5 rounded-[8px] font-medium transition cursor-pointer ${
               activeView === 'calendar'
-                ? 'bg-slate-800 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#C8A96A] text-[#151A22] font-semibold'
+                : 'text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
-            <CalendarIcon className="w-3.5 h-3.5" />
+            <CalendarIcon className="w-4 h-4" />
             <span>Calendrier</span>
           </button>
         </div>
@@ -68,9 +67,9 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
         <button
           type="button"
           onClick={() => setIsTaskModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition cursor-pointer"
+          className="min-h-[44px] inline-flex items-center gap-1.5 px-3.5 rounded-[8px] bg-[#1C232D] hover:bg-[#2A3340] text-[#ECE9E2] border border-[#2A3340] text-xs font-semibold transition cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-4 h-4 text-[#C8A96A]" />
           <span>Tâche / Rdv</span>
         </button>
       </div>

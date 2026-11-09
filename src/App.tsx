@@ -426,16 +426,16 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#151A22] text-[#ECE9E2] flex flex-col justify-between">
       {/* Non-intrusive Offline status */}
       <OfflineIndicator />
 
       {/* Main Container constrained to mobile max-width */}
       <div className="max-w-md mx-auto w-full px-4 pt-4 pb-28 flex-1 flex flex-col">
         {/* Top App Header */}
-        <header className="flex items-center justify-between pb-3 mb-3 border-b border-slate-900">
+        <header className="flex items-center justify-between pb-3 mb-3 border-b border-[#2A3340]">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-0.5 flex items-center justify-center shadow-md shadow-amber-500/5 overflow-hidden">
+            <div className="w-10 h-10 rounded-[8px] bg-[#1C232D] border border-[#2A3340] p-1 flex items-center justify-center overflow-hidden shrink-0">
               <img
                 src="/lk-logo.png"
                 alt="Logo LK manage"
@@ -443,32 +443,32 @@ export default function App() {
               />
             </div>
             <div>
-              <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+              <h1 className="text-base font-semibold text-[#ECE9E2] tracking-tight flex items-center gap-2">
                 LK manage
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                <span className="text-xs font-normal px-2 py-0.5 rounded-[4px] bg-[#1C232D] text-[#98A2B0] border border-[#2A3340]">
                   Hors ligne
                 </span>
               </h1>
-              <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span>Stockage local IndexedDB</span>
+              <p className="text-xs text-[#98A2B0] flex items-center gap-1.5 mt-0.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#5FB48C]" />
+                <span>Stockage local chiffré</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <PWAInstallButton />
             <button
               type="button"
               onClick={() => setIsSettingsOpen(true)}
-              className="relative p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition cursor-pointer"
+              className="relative w-11 h-11 rounded-[8px] bg-[#1C232D] hover:bg-[#252F3D] text-[#ECE9E2] border border-[#2A3340] flex items-center justify-center transition cursor-pointer"
               title="Paramètres, Code PIN & Sauvegarde"
               aria-label="Ouvrir les paramètres"
             >
-              <SettingsIcon className="w-4 h-4" />
+              <SettingsIcon className="w-5 h-5" />
               {backupReminderActive && (
                 <span
-                  className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse ring-2 ring-slate-950"
+                  className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#C8A96A]"
                   title="Sauvegarde mensuelle recommandée"
                 />
               )}
@@ -477,20 +477,22 @@ export default function App() {
         </header>
 
         {/* Primary Tabs Navigation: « Dettes », « Planning », « Contrats » */}
-        <nav className="grid grid-cols-3 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 mb-4" aria-label="Navigation principale">
+        <nav className="grid grid-cols-3 p-1 rounded-[8px] bg-[#1C232D] border border-[#2A3340] mb-4" aria-label="Navigation principale">
           <button
             type="button"
             onClick={() => setActiveMainTab('dettes')}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`min-h-[44px] py-2 px-2 rounded-[6px] text-sm font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               activeMainTab === 'dettes'
-                ? 'bg-slate-800 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#C8A96A] text-[#151A22]'
+                : 'text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
-            <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+            <Wallet className="w-4 h-4" />
             <span>Dettes</span>
             {totals.totalCount > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300">
+              <span className={`text-xs px-1.5 py-0.5 rounded-full tabular-nums ${
+                activeMainTab === 'dettes' ? 'bg-[#151A22] text-[#C8A96A]' : 'bg-[#151A22] text-[#98A2B0]'
+              }`}>
                 {totals.totalCount}
               </span>
             )}
@@ -499,16 +501,18 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveMainTab('planning')}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition relative cursor-pointer ${
+            className={`min-h-[44px] py-2 px-2 rounded-[6px] text-sm font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               activeMainTab === 'planning'
-                ? 'bg-slate-800 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#C8A96A] text-[#151A22]'
+                : 'text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+            <Calendar className="w-4 h-4" />
             <span>Planning</span>
             {planningAlertCount > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-bold">
+              <span className={`text-xs px-1.5 py-0.5 rounded-full tabular-nums ${
+                activeMainTab === 'planning' ? 'bg-[#151A22] text-[#E5604D]' : 'bg-[#E5604D] text-[#ECE9E2]'
+              }`}>
                 {planningAlertCount}
               </span>
             )}
@@ -517,16 +521,18 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveMainTab('contrats')}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition relative cursor-pointer ${
+            className={`min-h-[44px] py-2 px-2 rounded-[6px] text-sm font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               activeMainTab === 'contrats'
-                ? 'bg-slate-800 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#C8A96A] text-[#151A22]'
+                : 'text-[#98A2B0] hover:text-[#ECE9E2]'
             }`}
           >
-            <FileText className="w-3.5 h-3.5 text-amber-400" />
+            <FileText className="w-4 h-4" />
             <span>Contrats</span>
             {contracts.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+              <span className={`text-xs px-1.5 py-0.5 rounded-full tabular-nums ${
+                activeMainTab === 'contrats' ? 'bg-[#151A22] text-[#C8A96A]' : 'bg-[#151A22] text-[#98A2B0]'
+              }`}>
                 {contracts.length}
               </span>
             )}
@@ -535,38 +541,39 @@ export default function App() {
 
         {/* TAB 1: DETTES */}
         {activeMainTab === 'dettes' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Dashboard Financial Overview (FC and USD separate) */}
             <section>
               <Dashboard
                 totals={totals}
                 activeFilter={selectedFilter}
                 onSelectFilter={(filter) => setSelectedFilter(filter)}
+                debts={debts}
               />
             </section>
 
             {/* Search and Filters Bar */}
-            <section className="space-y-2">
+            <section className="space-y-2 pt-1">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Rechercher par nom, motif, tél..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs focus:outline-none focus:border-amber-500"
+                  className="w-full min-h-[44px] pl-10 pr-3 py-2.5 rounded-[8px] bg-[#1C232D] border border-[#2A3340] text-[#ECE9E2] placeholder-[#98A2B0] text-sm focus:outline-none focus:border-[#C8A96A]"
                 />
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-[#98A2B0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
-              {/* Status Filters */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
+              {/* Status Filters (min 44px touch targets) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-sm">
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('all')}
-                  className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
+                  className={`min-h-[40px] px-3.5 py-2 rounded-[8px] font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'all'
-                      ? 'bg-slate-800 text-white font-bold'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                      ? 'bg-[#1C232D] text-[#ECE9E2] border border-[#C8A96A]'
+                      : 'bg-[#151A22] text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340]'
                   }`}
                 >
                   Toutes ({totals.totalCount})
@@ -574,10 +581,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('on_me_doit')}
-                  className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
+                  className={`min-h-[40px] px-3.5 py-2 rounded-[8px] font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'on_me_doit'
-                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/50 font-bold'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                      ? 'bg-[#1C232D] text-[#5FB48C] border border-[#5FB48C]'
+                      : 'bg-[#151A22] text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340]'
                   }`}
                 >
                   On me doit
@@ -585,10 +592,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('je_dois')}
-                  className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
+                  className={`min-h-[40px] px-3.5 py-2 rounded-[8px] font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'je_dois'
-                      ? 'bg-amber-950 text-amber-400 border border-amber-500/50 font-bold'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                      ? 'bg-[#1C232D] text-[#ECE9E2] border border-[#C8A96A]'
+                      : 'bg-[#151A22] text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340]'
                   }`}
                 >
                   Je dois
@@ -597,10 +604,10 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setSelectedFilter('overdue')}
-                    className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
+                    className={`min-h-[40px] px-3.5 py-2 rounded-[8px] font-medium shrink-0 transition cursor-pointer ${
                       selectedFilter === 'overdue'
-                        ? 'bg-rose-950 text-rose-400 border border-rose-500/50 font-bold'
-                        : 'bg-slate-900 text-rose-400 hover:text-rose-300 border border-slate-800'
+                        ? 'bg-[#1C232D] text-[#E5604D] border border-[#E5604D]'
+                        : 'bg-[#151A22] text-[#E5604D] border border-[#2A3340]'
                     }`}
                   >
                     En retard ({totals.overdueCount})
@@ -609,10 +616,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSelectedFilter('settled')}
-                  className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition cursor-pointer ${
+                  className={`min-h-[40px] px-3.5 py-2 rounded-[8px] font-medium shrink-0 transition cursor-pointer ${
                     selectedFilter === 'settled'
-                      ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 font-bold'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                      ? 'bg-[#1C232D] text-[#5FB48C] border border-[#5FB48C]'
+                      : 'bg-[#151A22] text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340]'
                   }`}
                 >
                   Soldées ({totals.settledCount})
@@ -620,63 +627,65 @@ export default function App() {
               </div>
 
               {/* Currency & Sort Bar */}
-              <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-[#2A3340]">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-500">Devise :</span>
+                  <span className="text-xs text-[#98A2B0]">Devise :</span>
                   {(['ALL', 'USD', 'FC'] as const).map((curr) => (
                     <button
                       key={curr}
                       type="button"
                       onClick={() => setCurrencyFilter(curr)}
-                      className={`px-2 py-0.5 rounded-md font-semibold text-[11px] transition cursor-pointer ${
+                      className={`min-h-[32px] px-2.5 py-1 rounded-[6px] font-medium text-xs transition cursor-pointer ${
                         currencyFilter === curr
-                          ? 'bg-slate-700 text-white'
-                          : 'text-slate-500 hover:text-slate-300'
+                          ? 'bg-[#1C232D] text-[#ECE9E2] border border-[#C8A96A]'
+                          : 'text-[#98A2B0] hover:text-[#ECE9E2]'
                       }`}
                     >
-                      {curr === 'ALL' ? 'Toutes' : curr === 'USD' ? 'USD ($)' : 'FC'}
+                      {curr === 'ALL' ? 'Toutes' : curr === 'USD' ? 'USD' : 'FC'}
                     </button>
                   ))}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  <ArrowUpDown className="w-3 h-3 text-slate-500" />
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-[#98A2B0]" />
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortType)}
-                    className="bg-transparent text-slate-400 hover:text-slate-200 text-[11px] focus:outline-none cursor-pointer"
+                    className="min-h-[32px] bg-[#1C232D] border border-[#2A3340] rounded-[6px] px-2 py-1 text-xs text-[#ECE9E2] focus:outline-none cursor-pointer"
                   >
-                    <option value="due_date" className="bg-slate-900 text-white">Échéance</option>
-                    <option value="recent" className="bg-slate-900 text-white">Plus récentes</option>
-                    <option value="amount_desc" className="bg-slate-900 text-white">Montant élevé</option>
+                    <option value="due_date" className="bg-[#1C232D] text-[#ECE9E2]">Échéance</option>
+                    <option value="recent" className="bg-[#1C232D] text-[#ECE9E2]">Plus récentes</option>
+                    <option value="amount_desc" className="bg-[#1C232D] text-[#ECE9E2]">Montant élevé</option>
                   </select>
                 </div>
               </div>
             </section>
 
-            {/* Debts List */}
-            <section className="space-y-2.5">
+            {/* Debts List in Ledger Format (separated by fine line border) */}
+            <section>
               {isLoading ? (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  Chargement des données locales...
+                <div className="py-12 text-center text-sm text-[#98A2B0]">
+                  Chargement du registre...
                 </div>
               ) : filteredDebts.length > 0 ? (
-                filteredDebts.map((debt) => (
-                  <DebtCard
-                    key={debt.id}
-                    debt={debt}
-                    hasContract={contracts.some((c) => c.debtId === debt.id)}
-                    onClick={() => setSelectedDebtId(debt.id)}
-                  />
-                ))
+                <div className="rounded-[8px] bg-[#1C232D] border border-[#2A3340] overflow-hidden">
+                  {filteredDebts.map((debt) => (
+                    <DebtCard
+                      key={debt.id}
+                      debt={debt}
+                      hasContract={contracts.some((c) => c.debtId === debt.id)}
+                      onClick={() => setSelectedDebtId(debt.id)}
+                    />
+                  ))}
+                </div>
               ) : debts.length === 0 ? (
-                <div className="py-12 px-6 text-center rounded-3xl bg-slate-900/40 border border-dashed border-slate-800 my-auto">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 mx-auto flex items-center justify-center text-slate-600 mb-4 shadow-inner">
-                    <Coins className="w-7 h-7 text-emerald-400/80" />
+                <div className="py-12 px-6 text-center rounded-[8px] bg-[#1C232D] border border-[#2A3340]">
+                  <div className="w-12 h-12 rounded-[8px] bg-[#151A22] border border-[#2A3340] mx-auto flex items-center justify-center text-[#98A2B0] mb-3">
+                    <Coins className="w-6 h-6 text-[#C8A96A]" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1.5">Aucune dette enregistrée</h3>
-                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed mb-5">
-                    L'application démarre vide. Vos données restent exclusivement stockées sur votre appareil (IndexedDB).
+                  <h3 className="text-base font-semibold text-[#ECE9E2] mb-1">Aucune dette enregistrée</h3>
+                  <p className="text-sm text-[#98A2B0] max-w-xs mx-auto leading-relaxed mb-4">
+                    Le registre est vide. Vos données sont conservées hors ligne sur cet appareil.
                   </p>
                   <button
                     type="button"
@@ -685,14 +694,14 @@ export default function App() {
                       setFormDefaultToContract(false);
                       setIsFormOpen(true);
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-950 transition cursor-pointer"
+                    className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] text-[#151A22] text-sm font-semibold transition cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Ajouter ma première dette</span>
+                    <span>Enregistrer une dette</span>
                   </button>
                 </div>
               ) : (
-                <div className="py-8 text-center text-xs text-slate-500">
+                <div className="py-8 text-center text-sm text-[#98A2B0] bg-[#1C232D] rounded-[8px] border border-[#2A3340]">
                   Aucune dette ne correspond aux critères sélectionnés.
                 </div>
               )}
@@ -734,9 +743,9 @@ export default function App() {
         )}
       </div>
 
-      {/* Floating Action Button (FAB) on Dettes Tab */}
+      {/* Primary Action Button (Fixed at bottom on Dettes tab) */}
       {activeMainTab === 'dettes' && (
-        <div className="fixed bottom-5 left-0 right-0 max-w-md mx-auto px-4 z-30 pointer-events-none">
+        <div className="fixed bottom-4 left-0 right-0 max-w-md mx-auto px-4 z-30 pointer-events-none">
           <button
             type="button"
             onClick={() => {
@@ -744,11 +753,11 @@ export default function App() {
               setFormDefaultToContract(true);
               setIsFormOpen(true);
             }}
-            className="pointer-events-auto w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-2xl shadow-emerald-950 border border-emerald-400/30 transition cursor-pointer"
-            aria-label="Ajouter une nouvelle dette ou créance"
+            className="pointer-events-auto w-full min-h-[48px] py-3 px-4 rounded-[8px] bg-[#C8A96A] hover:bg-[#bfa05f] active:bg-[#b29454] text-[#151A22] text-base font-semibold flex items-center justify-center gap-2 border border-[#C8A96A] transition cursor-pointer"
+            aria-label="Enregistrer une dette"
           >
             <Plus className="w-5 h-5" />
-            <span>Nouvelle dette ou créance</span>
+            <span>Enregistrer une dette</span>
           </button>
         </div>
       )}

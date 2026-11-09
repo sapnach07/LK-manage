@@ -12,7 +12,6 @@ import {
 import {
   Stroke,
   Point,
-  drawStroke,
   redrawAllStrokes,
   isSignatureValid,
   exportCroppedTransparentSignaturePng,
@@ -34,7 +33,6 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   initialSignature = null,
 }) => {
   // Canvases
-  const inlineCanvasRef = useRef<HTMLCanvasElement>(null);
   const modalCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Drawing state
@@ -73,7 +71,6 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
       locked = false;
     }
 
-    // If orientation lock fails or isn't supported, check if current screen is portrait
     const isPortrait =
       typeof window !== 'undefined' &&
       window.matchMedia &&
@@ -174,7 +171,6 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
     e: React.PointerEvent<HTMLCanvasElement>,
     isModal: boolean
   ) => {
-    // If inline and user touches or clicks, immediately open fullscreen mode as requested!
     if (!isModal) {
       e.preventDefault();
       openExpanded();
@@ -185,7 +181,6 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
     const canvas = modalCanvasRef.current;
     if (!canvas) return;
 
-    // Capture pointer to prevent losing touches outside canvas boundary
     try {
       canvas.setPointerCapture(e.pointerId);
     } catch {
@@ -272,24 +267,20 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
     }
   };
 
-  // Undo last stroke action
   const handleUndo = () => {
     setValidationError(null);
     setStrokes((prev) => (prev.length > 0 ? prev.slice(0, prev.length - 1) : prev));
   };
 
-  // Clear all strokes
   const handleClear = () => {
     setValidationError(null);
     setStrokes([]);
   };
 
-  // Validate and export signature
   const handleValidate = () => {
     const canvas = modalCanvasRef.current;
     if (!canvas) return;
 
-    // Check minimum stroke length & non-empty
     const check = isSignatureValid(strokes, 70, 16);
     if (!check.valid) {
       setValidationError(check.reason || 'Signature trop courte, recommencez');
@@ -328,12 +319,12 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
       {/* Label and inline action header */}
       <div className="flex items-center justify-between">
         <div>
-          <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+          <label className="text-xs font-semibold text-[#ECE9E2] flex items-center gap-1.5">
             <span>{label}</span>
-            {required && <span className="text-rose-400">*</span>}
-            {signaturePreview && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline" />}
+            {required && <span className="text-[#E5604D]">*</span>}
+            {signaturePreview && <CheckCircle2 className="w-3.5 h-3.5 text-[#5FB48C] inline" />}
           </label>
-          {subtitle && <p className="text-[11px] text-slate-400">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-[#98A2B0]">{subtitle}</p>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -341,9 +332,9 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
             <button
               type="button"
               onClick={handleClearDirect}
-              className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-rose-400 transition cursor-pointer px-2 py-0.5 rounded bg-slate-800"
+              className="min-h-[44px] flex items-center gap-1 text-xs text-[#98A2B0] hover:text-[#E5604D] transition cursor-pointer px-2.5 rounded-[8px] bg-[#151A22] border border-[#2A3340]"
             >
-              <Eraser className="w-3 h-3" />
+              <Eraser className="w-3.5 h-3.5" />
               <span>Effacer</span>
             </button>
           )}
@@ -351,9 +342,9 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
           <button
             type="button"
             onClick={openExpanded}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition cursor-pointer px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30"
+            className="min-h-[44px] flex items-center gap-1.5 text-xs font-semibold text-[#151A22] bg-[#C8A96A] hover:bg-[#d6b777] transition cursor-pointer px-3 rounded-[8px]"
           >
-            <Maximize2 className="w-3 h-3" />
+            <Maximize2 className="w-3.5 h-3.5" />
             <span>Agrandir</span>
           </button>
         </div>
@@ -362,7 +353,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
       {/* Small inline signature box */}
       <div
         onClick={openExpanded}
-        className="relative rounded-xl border border-slate-700 bg-white shadow-inner overflow-hidden cursor-pointer touch-none h-28 group transition hover:border-amber-400/80"
+        className="relative rounded-[8px] border border-[#2A3340] bg-white overflow-hidden cursor-pointer touch-none h-28 group transition hover:border-[#C8A96A]"
         style={{ touchAction: 'none' }}
       >
         {signaturePreview ? (
@@ -374,18 +365,17 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
             />
           </div>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-1.5">
-            <span className="text-xs italic font-medium text-slate-500">
+          <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1.5">
+            <span className="text-xs italic font-medium">
               Touchez ici ou cliquez sur « Agrandir » pour signer
             </span>
-            <span className="text-[10px] text-amber-600/80 font-semibold px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+            <span className="text-[11px] text-[#151A22] font-semibold px-2 py-0.5 rounded-[4px] bg-[#C8A96A]">
               Plein écran disponible
             </span>
           </div>
         )}
 
-        {/* Floating badge inside inline box */}
-        <div className="pointer-events-none absolute bottom-1.5 right-2 text-[9px] text-slate-400 font-mono">
+        <div className="pointer-events-none absolute bottom-1.5 right-2 text-[10px] text-slate-400 font-mono">
           {signaturePreview ? 'Signature enregistrée' : 'Format PNG transparent'}
         </div>
       </div>
@@ -393,14 +383,14 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
       {/* FULLSCREEN SIGNATURE OVERLAY (MODAL) */}
       {isExpanded && (
         <div
-          className="fixed inset-0 z-[100] bg-slate-950 flex flex-col text-slate-100 select-none overflow-hidden"
+          className="fixed inset-0 z-[100] bg-[#151A22] flex flex-col text-[#ECE9E2] select-none overflow-hidden"
           style={{ touchAction: 'none' }}
         >
           {/* Top Bar */}
-          <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div className="px-4 py-3 bg-[#1C232D] border-b border-[#2A3340] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-white">{label}</span>
-              <span className="text-xs text-slate-400 hidden sm:inline">• Tracé tactile lissé</span>
+              <span className="font-semibold text-sm text-[#ECE9E2]">{label}</span>
+              <span className="text-xs text-[#98A2B0] hidden sm:inline">• Tracé lissé</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -409,11 +399,11 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                 type="button"
                 onClick={handleUndo}
                 disabled={strokes.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="min-h-[44px] flex items-center gap-1.5 px-3 rounded-[8px] bg-[#151A22] hover:bg-[#2A3340] text-[#ECE9E2] text-xs font-medium border border-[#2A3340] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Undo2 className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Annuler le dernier trait</span>
-                <span className="xs:hidden">Annuler</span>
+                <span className="hidden sm:inline">Annuler dernier trait</span>
+                <span className="sm:hidden">Annuler</span>
               </button>
 
               {/* Clear Button */}
@@ -421,7 +411,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                 type="button"
                 onClick={handleClear}
                 disabled={strokes.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="min-h-[44px] flex items-center gap-1.5 px-3 rounded-[8px] bg-[#151A22] hover:bg-[#2A3340] text-[#E5604D] text-xs font-medium border border-[#2A3340] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Eraser className="w-3.5 h-3.5" />
                 <span>Effacer</span>
@@ -431,7 +421,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               <button
                 type="button"
                 onClick={handleValidate}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition cursor-pointer shadow-md shadow-emerald-500/20"
+                className="min-h-[44px] flex items-center gap-1.5 px-4 rounded-[8px] bg-[#C8A96A] hover:bg-[#d6b777] text-[#151A22] text-xs font-semibold transition cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>Valider</span>
@@ -441,7 +431,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               <button
                 type="button"
                 onClick={closeExpanded}
-                className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer ml-1"
+                className="min-h-[44px] min-w-[44px] rounded-[8px] bg-[#151A22] text-[#98A2B0] hover:text-[#ECE9E2] border border-[#2A3340] transition cursor-pointer flex items-center justify-center ml-1"
                 aria-label="Fermer"
               >
                 <Minimize2 className="w-4 h-4" />
@@ -451,9 +441,9 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
           {/* Orientation warning banner if phone is still portrait */}
           {showOrientationHint && (
-            <div className="px-4 py-2 bg-amber-500/15 border-b border-amber-500/30 text-amber-300 text-xs flex items-center justify-between shrink-0 animate-pulse">
+            <div className="px-4 py-2 bg-[#1C232D] border-b border-[#2A3340] text-[#C8A96A] text-xs flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <Smartphone className="w-4 h-4 text-amber-400 rotate-90 shrink-0" />
+                <Smartphone className="w-4 h-4 text-[#C8A96A] rotate-90 shrink-0" />
                 <span className="font-medium">
                   Tourne ton téléphone pour signer plus confortablement
                 </span>
@@ -461,7 +451,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               <button
                 type="button"
                 onClick={() => setShowOrientationHint(false)}
-                className="text-[10px] text-amber-400 hover:underline cursor-pointer"
+                className="text-xs text-[#98A2B0] hover:text-[#ECE9E2] cursor-pointer"
               >
                 Ignorer
               </button>
@@ -470,15 +460,15 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
           {/* Validation Error Banner */}
           {validationError && (
-            <div className="px-4 py-2 bg-rose-500/20 border-b border-rose-500/40 text-rose-300 text-xs flex items-center gap-2 font-medium shrink-0 animate-shake">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="px-4 py-2 bg-[#1C232D] border-b border-[#E5604D] text-[#E5604D] text-xs flex items-center gap-2 font-medium shrink-0">
+              <AlertCircle className="w-4 h-4 text-[#E5604D] shrink-0" />
               <span>{validationError}</span>
             </div>
           )}
 
-          {/* Very large signature canvas area: white background, black ink, baseline, discreet "Signez ici" */}
+          {/* Canvas area */}
           <div
-            className="flex-1 relative bg-white m-3 sm:m-4 rounded-2xl shadow-2xl border-2 border-slate-300 overflow-hidden"
+            className="flex-1 relative bg-white m-3 sm:m-4 rounded-[8px] border border-[#2A3340] overflow-hidden"
             style={{ touchAction: 'none' }}
           >
             <canvas
@@ -491,13 +481,13 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               onPointerCancel={handlePointerUpOrLeave}
             />
 
-            {/* Baseline for comfortable handwriting */}
-            <div className="pointer-events-none absolute left-8 right-8 bottom-16 sm:bottom-20 border-b border-dashed border-slate-300 flex items-center justify-between text-[11px] text-slate-400 select-none pb-1">
+            {/* Baseline */}
+            <div className="pointer-events-none absolute left-8 right-8 bottom-16 sm:bottom-20 border-b border-dashed border-slate-300 flex items-center justify-between text-xs text-slate-400 select-none pb-1">
               <span>Ligne de signature</span>
               <span className="text-[10px] font-mono">X ................................................................</span>
             </div>
 
-            {/* Discreet watermark "Signez ici" */}
+            {/* Discreet watermark */}
             {strokes.length === 0 && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-slate-300 text-2xl sm:text-3xl font-serif italic tracking-wide select-none">
                 Signez ici

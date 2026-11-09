@@ -250,5 +250,5 @@ test('buildDefaultWhatsAppMessage includes balance, reason, and due date', () =>
   const msg = buildDefaultWhatsAppMessage(debt, summary);
   assert.ok(msg.includes('Patrick'));
   assert.ok(msg.includes('Frais de transport'));
-  assert.ok(msg.includes('75 $'));
+  assert.ok(msg.includes('75 USD'));
 });

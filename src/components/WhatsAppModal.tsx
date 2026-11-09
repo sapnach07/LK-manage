@@ -40,22 +40,22 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({ debt, summary, onC
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-xs p-0 sm:p-4">
-      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100 max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-lg rounded-t-[16px] sm:rounded-[16px] bg-[#1C232D] border border-[#2A3340] p-4 sm:p-5 text-[#ECE9E2] max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <div className="flex items-center justify-between pb-3 border-b border-[#2A3340]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-[8px] bg-[#151A22] border border-[#2A3340] text-[#5FB48C] flex items-center justify-center">
               <MessageSquare className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Rappeler par WhatsApp</h3>
-              <p className="text-[11px] text-slate-400">À : {debt.personName}</p>
+              <h3 className="text-sm font-semibold text-[#ECE9E2]">Rappeler par WhatsApp</h3>
+              <p className="text-xs text-[#98A2B0]">À : {debt.personName}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="min-h-[44px] min-w-[44px] rounded-[8px] text-[#98A2B0] hover:text-[#ECE9E2] hover:bg-[#151A22] transition flex items-center justify-center cursor-pointer"
             aria-label="Fermer"
           >
             <X className="w-5 h-5" />
@@ -63,21 +63,21 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({ debt, summary, onC
         </div>
 
         {/* Form Body */}
-        <div className="py-4 space-y-3 overflow-y-auto flex-1">
+        <div className="py-4 space-y-3 overflow-y-auto flex-1 text-xs">
           {error && (
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <div className="flex items-center gap-2 p-3 rounded-[8px] bg-[#151A22] border border-[#E5604D] text-[#E5604D]">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#E5604D]" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Recipient Phone */}
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-[#ECE9E2]">
               Numéro de téléphone WhatsApp
             </label>
             <div className="relative">
-              <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Phone className="w-4 h-4 text-[#98A2B0] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="tel"
                 value={phone}
@@ -86,24 +86,24 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({ debt, summary, onC
                   setError(null);
                 }}
                 placeholder="+243..."
-                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition"
+                className="w-full min-h-[44px] pl-9 pr-3 text-sm bg-[#151A22] border border-[#2A3340] rounded-[8px] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A] transition"
               />
             </div>
-            <div className="mt-1 text-[11px] text-slate-400">
+            <div className="text-xs text-[#98A2B0]">
               {cleanFormatted ? `Format international wa.me/${cleanFormatted}` : 'Indicatif par défaut : +243 (RDC)'}
             </div>
           </div>
 
           {/* Message Preview and Editor */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-[#ECE9E2]">
                 Message pré-écrit (modifiable)
               </label>
               <button
                 type="button"
                 onClick={() => setMessage(buildDefaultWhatsAppMessage(debt, summary))}
-                className="text-[11px] text-emerald-400 hover:underline"
+                className="text-xs text-[#C8A96A] hover:underline cursor-pointer"
               >
                 Réinitialiser
               </button>
@@ -115,25 +115,25 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({ debt, summary, onC
                 setMessage(e.target.value);
                 setError(null);
               }}
-              className="w-full p-3 text-xs leading-relaxed bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition resize-none font-sans"
+              className="w-full p-3 text-xs leading-relaxed bg-[#151A22] border border-[#2A3340] rounded-[8px] text-[#ECE9E2] placeholder-[#98A2B0] focus:outline-none focus:border-[#C8A96A] transition resize-none font-sans"
               placeholder="Écrivez votre message..."
             />
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-slate-800 flex items-center gap-2">
+        <div className="pt-3 border-t border-[#2A3340] flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition"
+            className="flex-1 min-h-[44px] rounded-[8px] bg-[#151A22] hover:bg-[#2A3340] text-xs font-medium text-[#ECE9E2] border border-[#2A3340] transition cursor-pointer"
           >
             Annuler
           </button>
           <button
             type="button"
             onClick={handleOpenWhatsApp}
-            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white flex items-center justify-center gap-2 shadow-lg shadow-emerald-950 transition cursor-pointer"
+            className="flex-1 min-h-[44px] rounded-[8px] bg-[#C8A96A] hover:bg-[#d6b777] text-xs font-semibold text-[#151A22] flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Ouvrir WhatsApp</span>
